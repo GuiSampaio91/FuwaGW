@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FuwaFuwa Guild Wars Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+    <script>
+        // Handle messages from the iframe
+        window.addEventListener('message', function(event) {
+            // Verify the origin of the message
+            if (event.origin.includes('script.google.com') || 
+                event.origin.includes('script.googleusercontent.com')) {
+                
+                // Check if it's a navigation request
+                if (event.data && event.data.type === 'navigation') {
+                    // Redirect the parent page
+                    window.location.href = event.data.url;
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <iframe src="https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec?embed=true" frameborder="0" allowfullscreen></iframe>
+</body>
+</html>

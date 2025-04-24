@@ -23,16 +23,32 @@
             if (event.origin.includes('script.google.com') || 
                 event.origin.includes('script.googleusercontent.com')) {
                 
+                console.log('Received message:', event.data);
+                
                 // Check if it's a navigation request
                 if (event.data && event.data.type === 'navigation') {
-                    // Redirect the parent page
-                    window.location.href = event.data.url;
+                    console.log('Navigation request received:', event.data.url);
+                    
+                    // Extract the page parameter if present
+                    let targetUrl = '/fuwafuwa';
+                    const originalUrl = event.data.url;
+                    
+                    // Check if there's a page parameter
+                    if (originalUrl.includes('?page=')) {
+                        const pageParam = originalUrl.split('?page=')[1].split('&')[0];
+                        targetUrl = '/fuwafuwa?page=' + pageParam;
+                    }
+                    
+                    console.log('Navigating to:', targetUrl);
+                    
+                    // Navigate to the appropriate page on our domain
+                    window.location.href = targetUrl;
                 }
             }
         });
     </script>
 </head>
 <body>
-    <iframe src="https://script.google.com/macros/s/AKfycbw6tSqkFT9b3rFPLlf3YCBWbhYk0zqJdpokJqMFP2uX0MSK92vS4XU20FtDQ5PSsgE-/exec" frameborder="0" allowfullscreen></iframe>
+    <iframe src="https://script.google.com/macros/s/AKfycbw6tSqkFT9b3rFPLlf3YCBWbhYk0zqJdpokJqMFP2uX0MSK92vS4XU20FtDQ5PSsgE-/exec?embed=true" frameborder="0" allowfullscreen></iframe>
 </body>
 </html>

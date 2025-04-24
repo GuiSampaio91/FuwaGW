@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,18 +18,16 @@
         }
     </style>
     <script>
-        // Handle messages from the iframe
+        // Handle messages from the iframe - this is the critical part
         window.addEventListener('message', function(event) {
+            console.log('Parent received message:', event.data);
+            
             // Verify the origin of the message
             if (event.origin.includes('script.google.com') || 
                 event.origin.includes('script.googleusercontent.com')) {
                 
-                console.log('Received message:', event.data);
-                
                 // Check if it's a navigation request
                 if (event.data && event.data.type === 'navigation') {
-                    console.log('Navigation request received:', event.data.url);
-                    
                     // Extract the page parameter if present
                     let targetUrl = '/fuwafuwa';
                     const originalUrl = event.data.url;
@@ -40,7 +39,6 @@
                     }
                     
                     console.log('Navigating to:', targetUrl);
-                    
                     // Navigate to the appropriate page on our domain
                     window.location.href = targetUrl;
                 }

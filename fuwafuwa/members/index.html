@@ -61,17 +61,21 @@
         }
     </style>
     <script>
-        // Show content when iframe is loaded
-        window.addEventListener('load', function() {
-            const iframe = document.querySelector('iframe');
-            const loadingOverlay = document.querySelector('.loading-overlay');
-            
-            iframe.addEventListener('load', function() {
-                setTimeout(function() {
-                    loadingOverlay.style.display = 'none';
-                }, 500); // Slight delay to ensure iframe is fully rendered
-            });
-        });
+// Show content when iframe is loaded
+window.addEventListener('load', function() {
+    const iframe = document.querySelector('iframe');
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    
+    // Set a max timeout in case iframe doesn't send 'load' event
+    const maxTimeout = setTimeout(function() {
+        loadingOverlay.style.display = 'none';
+    }, 8000); // 8 seconds max wait time
+    
+    iframe.addEventListener('load', function() {
+        clearTimeout(maxTimeout);
+        loadingOverlay.style.display = 'none';
+    });
+});
     </script>
 </head>
 <body>

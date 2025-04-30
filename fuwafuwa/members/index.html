@@ -88,49 +88,5 @@
     </div>
     
     <iframe src="https://script.google.com/macros/s/AKfycbw6COb4VAaebPowCgDqM-N8nXy9dtFYQ2j2gE3WVnZghPAA4Hgkds08IU3bnr5dGVXw/exec?page=member" allow="fullscreen" loading="lazy" width="100%" height="100%" id="contentFrame"></iframe>
-<script>
-  // Add event listener to intercept clicks on all links in the iframe
-  window.addEventListener('message', function(event) {
-    // Only accept messages from the iframe source
-    if (event.origin !== "https://script.google.com") return;
-    
-    // Check if it's a navigation message
-    if (event.data && event.data.type === 'navigation') {
-      window.location.href = event.data.url;
-    }
-  });
-  
-  // Periodically check for Counter Finder link in the iframe and modify its behavior
-  function checkForCounterFinderLink() {
-    try {
-      const iframe = document.getElementById('contentFrame');
-      if (!iframe || !iframe.contentWindow) return;
-      
-      const counterFinderLinks = iframe.contentDocument.querySelectorAll('a[href*="counterfinder"]');
-      
-      counterFinderLinks.forEach(link => {
-        // Replace the link's click behavior
-        link.onclick = function(e) {
-          e.preventDefault();
-          window.location.href = 'https://deitri.com/fuwafuwa/counterfinder/';
-          return false;
-        };
-      });
-    } catch (e) {
-      console.log("Error in checking for links:", e);
-    }
-  }
-  
-  // Run on load and periodically
-  window.addEventListener('load', function() {
-    // Wait for iframe to load
-    const iframe = document.getElementById('contentFrame');
-    iframe.onload = function() {
-      // Run immediately and every second to catch dynamically added links
-      checkForCounterFinderLink();
-      setInterval(checkForCounterFinderLink, 1000);
-    };
-  });
-</script>
 </body>
 </html>

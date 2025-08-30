@@ -9,7 +9,6 @@
   <title>FuwaFuwa – Guild Dashboard</title>
 
   <link rel="icon" href="data:," />
-
   <meta name="build" content="{{ site.github.build_revision | slice:0,8 }}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +36,13 @@
         <h2 class="card-title">Stats</h2>
         <div id="stats" class="stats">
           <div class="placeholder">Pick a player to see data.</div>
+        </div>
+      </article>
+
+      <article class="card" id="guildCard">
+        <h2 class="card-title" id="guildTitle">Guild Stats</h2>
+        <div id="guildStats" class="stats">
+          <div class="placeholder">Loading guild stats…</div>
         </div>
       </article>
     </section>

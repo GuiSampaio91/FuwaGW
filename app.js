@@ -1,3 +1,4 @@
+// Cache-busting with GitHub Pages build hash (no renames)
 const VER = document.querySelector('meta[name="build"]')?.content || Date.now().toString();
 const { SHEET_ID, API_KEY, RANGE_A1 } = await import(`./config.js?v=${VER}`);
 
@@ -11,11 +12,14 @@ const $guildStats = document.querySelector('#guildStats');
 const endpoint = (sheetId, rangeA1) =>
   `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(rangeA1)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&key=${API_KEY}`;
 
+// Percent helper: accepts 0.764, 76.4, or "76.4%"
 function toPercent(x, digits = 1) {
   if (x == null || x === "") return "–";
+  if (typeof x === "string" && x.includes("%")) return x.trim();
   const n = Number(x);
   if (!isFinite(n)) return "–";
-  return (n * 100).toFixed(digits) + "%";
+  const val = n > 1 ? n : n * 100;
+  return val.toFixed(digits) + "%";
 }
 function toNum(x) {
   if (x == null || x === "") return 0;
@@ -47,28 +51,50 @@ function parseRows(values) {
   return { headers, rows, values };
 }
 
+// Robustly locate the K/L mini-table
 function extractGuildStats(values) {
   if (!Array.isArray(values) || !values.length) return null;
 
+  // 1) Try to find the title "Guild Stats" anywhere
   let col = -1, row = -1;
-  for (let r = 0; r < Math.min(values.length, 5); r++) {
+  outer:
+  for (let r = 0; r < values.length; r++) {
     const rowArr = values[r] || [];
     for (let c = 0; c < rowArr.length; c++) {
-      if (String(rowArr[c]).trim().toLowerCase() === "guild stats") {
-        col = c; row = r; break;
-      }
+      const cell = String(rowArr[c] ?? "").trim().toLowerCase();
+      if (cell === "guild stats") { row = r; col = c; break outer; }
     }
-    if (col !== -1) break;
   }
-  if (col === -1) return null;
+  if (col !== -1) {
+    const title  = values[row]?.[col] || "Guild Stats";
+    const label1 = values[row + 1]?.[col] || "Avg. W/R";
+    const value1 = values[row + 1]?.[col + 1];
+    const label2 = values[row + 2]?.[col] || "Avg. Miss Rate";
+    const value2 = values[row + 2]?.[col + 1];
+    return { title, label1, value1, label2, value2 };
+  }
 
-  const title  = values[row]?.[col] || "Guild Stats";
-  const label1 = values[row + 1]?.[col] || "Avg. W/R";
-  const value1 = values[row + 1]?.[col + 1];
-  const label2 = values[row + 2]?.[col] || "Avg. Miss Rate";
-  const value2 = values[row + 2]?.[col + 1];
+  // 2) Fallback: find the labels themselves anywhere
+  let r1=-1,c1=-1,r2=-1,c2=-1;
+  for (let r = 0; r < values.length; r++) {
+    const rowArr = values[r] || [];
+    for (let c = 0; c < rowArr.length; c++) {
+      const cell = String(rowArr[c] ?? "").trim().toLowerCase();
+      if (cell === "avg. w/r") { r1 = r; c1 = c; }
+      if (cell === "avg. miss rate") { r2 = r; c2 = c; }
+    }
+  }
+  if (c1 !== -1 || c2 !== -1) {
+    const title = "Guild Stats";
+    const label1 = r1 !== -1 ? values[r1]?.[c1] : "Avg. W/R";
+    const value1 = r1 !== -1 ? values[r1]?.[c1 + 1] : undefined;
+    const label2 = r2 !== -1 ? values[r2]?.[c2] : "Avg. Miss Rate";
+    const value2 = r2 !== -1 ? values[r2]?.[c2 + 1] : undefined;
+    return { title, label1, value1, label2, value2 };
+  }
 
-  return { title, label1, value1, label2, value2 };
+  // 3) Not found
+  return null;
 }
 
 function buildPlayerOptions(rows) {
@@ -95,7 +121,6 @@ function renderStats(row) {
   const joinedRaw = pick(row, "Joined", "Season Join Date");
   const joined    = joinedRaw ?? "–";
 
-  // Sheet column "D/T Hits" (fallback to old "DeadTower Total")
   const dead = toNum(pick(row, "D/T Hits", "DeadTower Total")) || 0;
 
   const goodWR = Number(wr) >= 0.85;
@@ -116,9 +141,9 @@ function renderStats(row) {
 }
 
 function renderGuildStats(gs) {
-  if (!gs) {
+  if (!gs || (gs.value1 == null && gs.value2 == null)) {
     $guildTitle.textContent = "Guild Stats";
-    $guildStats.innerHTML = `<div class="placeholder">Guild stats unavailable.</div>`;
+    $guildStats.innerHTML = `<div class="placeholder">Guild stats not found in the selected range.</div>`;
     return;
   }
   $guildTitle.textContent = String(gs.title || "Guild Stats");
@@ -149,8 +174,11 @@ async function load() {
     window._guildRows = rows;
     $last.textContent = `Loaded at ${new Date().toLocaleString()}`;
 
-    renderGuildStats(extractGuildStats(values));
+    // Render guild panel from K/L block (robust search)
+    const gs = extractGuildStats(values);
+    renderGuildStats(gs);
 
+    // Optional preselect ?p=Name
     const pre = new URLSearchParams(location.search).get('p');
     if (pre) {
       $sel.value = pre;

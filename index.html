@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,40 +12,41 @@
 <body>
 <header class="container">
 <h1>FuwaFuwa – Guild Dashboard</h1>
-<p class="subtitle">Selecione seu nome para ver estatísticas atualizadas</p>
+<p class="subtitle">Pick your name to see your stats</p>
 </header>
 
 
 <main class="container">
 <section class="card">
-<label class="label" for="playerSelect">Jogador</label>
+<label class="label" for="playerSelect">Player</label>
 <select id="playerSelect" class="select">
-<option value="">Carregando jogadores...</option>
+<option value="">Loading players...</option>
 </select>
-<div id="lastUpdated" class="muted"></div>
+<div id="lastUpdated" class="muted" aria-live="polite"></div>
 </section>
 
 
+<!-- Extra spacing so the cards don't touch each other -->
 <section class="grid">
 <article class="card" id="statsCard">
-<h2 class="card-title">Estatísticas</h2>
+<h2 class="card-title">Stats</h2>
 <div id="stats" class="stats">
-<div class="placeholder">Escolha um jogador para ver os dados.</div>
+<div class="placeholder">Pick a player to see data.</div>
 </div>
 </article>
 </section>
 
 
-<div id="error" class="error hidden"></div>
+<div id="error" class="error hidden" role="alert"></div>
 </main>
 
 
 <footer class="container footer">
-<small>Atualiza ao vivo da planilha Google Sheets. © FuwaFuwa</small>
+<small>Live data from Google Sheets • © FuwaFuwa</small>
 </footer>
 
 
-<script src="config.js"></script>
-<script src="app.js" type="module"></script>
+<!-- Important: only one module script; config is imported inside app.js -->
+<script type="module" src="app.js"></script>
 </body>
 </html>

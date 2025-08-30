@@ -1,3 +1,6 @@
+---
+---
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,6 +10,9 @@
 
   <!-- prevent favicon 404 -->
   <link rel="icon" href="data:," />
+
+  <!-- Build hash from GitHub Pages (Jekyll) for cache-busting -->
+  <meta name="build" content="{{ site.github.build_revision | slice:0,8 }}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +34,7 @@
       <div id="lastUpdated" class="muted" aria-live="polite"></div>
     </section>
 
-    <section class="grid"> <!-- extra top margin added in CSS -->
+    <section class="grid">
       <article class="card" id="statsCard">
         <h2 class="card-title">Stats</h2>
         <div id="stats" class="stats">
@@ -44,7 +50,7 @@
     <small>Live data from Google Sheets • © FuwaFuwa</small>
   </footer>
 
-  <!-- IMPORTANT: only this script. app.js imports config.js -->
-  <script type="module" src="app.js?v=1"></script>
+  <!-- Only this script. app.js dynamically imports config.js with the build hash -->
+  <script type="module" src="app.js?v={{ site.github.build_revision | slice:0,8 }}"></script>
 </body>
 </html>

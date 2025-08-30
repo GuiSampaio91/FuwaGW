@@ -1,52 +1,50 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>FuwaFuwa – Guild Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FuwaFuwa – Guild Dashboard</title>
+
+  <!-- prevent favicon 404 -->
+  <link rel="icon" href="data:," />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<header class="container">
-<h1>FuwaFuwa – Guild Dashboard</h1>
-<p class="subtitle">Pick your name to see your stats</p>
-</header>
+  <header class="container">
+    <h1>FuwaFuwa – Guild Dashboard</h1>
+    <p class="subtitle">Pick your name to see your stats</p>
+  </header>
 
+  <main class="container">
+    <section class="card">
+      <label class="label" for="playerSelect">Player</label>
+      <select id="playerSelect" class="select">
+        <option value="">Loading players...</option>
+      </select>
+      <div id="lastUpdated" class="muted" aria-live="polite"></div>
+    </section>
 
-<main class="container">
-<section class="card">
-<label class="label" for="playerSelect">Player</label>
-<select id="playerSelect" class="select">
-<option value="">Loading players...</option>
-</select>
-<div id="lastUpdated" class="muted" aria-live="polite"></div>
-</section>
+    <section class="grid"> <!-- extra top margin added in CSS -->
+      <article class="card" id="statsCard">
+        <h2 class="card-title">Stats</h2>
+        <div id="stats" class="stats">
+          <div class="placeholder">Pick a player to see data.</div>
+        </div>
+      </article>
+    </section>
 
+    <div id="error" class="error hidden" role="alert"></div>
+  </main>
 
-<!-- Extra spacing so the cards don't touch each other -->
-<section class="grid">
-<article class="card" id="statsCard">
-<h2 class="card-title">Stats</h2>
-<div id="stats" class="stats">
-<div class="placeholder">Pick a player to see data.</div>
-</div>
-</article>
-</section>
+  <footer class="container footer">
+    <small>Live data from Google Sheets • © FuwaFuwa</small>
+  </footer>
 
-
-<div id="error" class="error hidden" role="alert"></div>
-</main>
-
-
-<footer class="container footer">
-<small>Live data from Google Sheets • © FuwaFuwa</small>
-</footer>
-
-
-<!-- Important: only one module script; config is imported inside app.js -->
-<script type="module" src="app.js"></script>
+  <!-- IMPORTANT: only this script. app.js imports config.js -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>

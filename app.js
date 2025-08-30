@@ -1,5 +1,5 @@
 // app.js (ESM). Files keep the same names. No renames.
-import { SHEET_ID, API_KEY, RANGE_A1 } from "./config.js";
+import { SHEET_ID, API_KEY, RANGE_A1 } from "./config.js?v=1";
 
 const $sel  = document.querySelector('#playerSelect');
 const $stats= document.querySelector('#stats');

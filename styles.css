@@ -4,7 +4,7 @@
 --border: #1e2a36;
 --text: #e5eef6;
 --muted: #98a6b3;
---accent: #34d399; /* verde suave */
+--accent: #34d399; /* soft green */
 --danger: #ef4444;
 }
 * { box-sizing: border-box; }
@@ -20,7 +20,8 @@ header h1 { margin: 0 0 6px; font-size: 28px; font-weight: 700; }
 .subtitle { margin: 0; color: var(--muted); }
 
 
-.grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+/* add a bit more separation between the top card and the grid */
+.grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 20px; }
 @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
 
 

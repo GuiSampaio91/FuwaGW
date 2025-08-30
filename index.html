@@ -8,10 +8,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FuwaFuwa – Guild Dashboard</title>
 
-  <!-- prevent favicon 404 -->
   <link rel="icon" href="data:," />
 
-  <!-- Build hash from GitHub Pages (Jekyll) for cache-busting -->
   <meta name="build" content="{{ site.github.build_revision | slice:0,8 }}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,7 +48,6 @@
     <small>Live data from Google Sheets • © FuwaFuwa</small>
   </footer>
 
-  <!-- Only this script. app.js dynamically imports config.js with the build hash -->
   <script type="module" src="app.js?v={{ site.github.build_revision | slice:0,8 }}"></script>
 </body>
 </html>

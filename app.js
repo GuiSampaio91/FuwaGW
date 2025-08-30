@@ -1,10 +1,12 @@
 const VER = document.querySelector('meta[name="build"]')?.content || Date.now().toString();
 const { SHEET_ID, API_KEY, RANGE_A1 } = await import(`./config.js?v=${VER}`);
 
-const $sel  = document.querySelector('#playerSelect');
-const $stats= document.querySelector('#stats');
-const $err  = document.querySelector('#error');
-const $last = document.querySelector('#lastUpdated');
+const $sel        = document.querySelector('#playerSelect');
+const $stats      = document.querySelector('#stats');
+const $err        = document.querySelector('#error');
+const $last       = document.querySelector('#lastUpdated');
+const $guildTitle = document.querySelector('#guildTitle');
+const $guildStats = document.querySelector('#guildStats');
 
 const endpoint = (sheetId, rangeA1) =>
   `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(rangeA1)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&key=${API_KEY}`;
@@ -26,16 +28,13 @@ function escHTML(s) {
 function escAttr(s) {
   return String(s).replace(/"/g, '&quot;');
 }
-
 function pick(obj, ...keys) {
-  for (const k of keys) {
-    if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] !== undefined) return obj[k];
-  }
+  for (const k of keys) if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] !== undefined) return obj[k];
   return undefined;
 }
 
 function parseRows(values) {
-  if (!values || values.length < 2) return { headers: [], rows: [] };
+  if (!values || values.length < 2) return { headers: [], rows: [], values };
   const headers = values[0].map(h => String(h).trim());
   const rows = values.slice(1)
     .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i]])))
@@ -45,7 +44,31 @@ function parseRows(values) {
       if (p.toLowerCase() === "guild stats") return false;
       return true;
     });
-  return { headers, rows };
+  return { headers, rows, values };
+}
+
+function extractGuildStats(values) {
+  if (!Array.isArray(values) || !values.length) return null;
+
+  let col = -1, row = -1;
+  for (let r = 0; r < Math.min(values.length, 5); r++) {
+    const rowArr = values[r] || [];
+    for (let c = 0; c < rowArr.length; c++) {
+      if (String(rowArr[c]).trim().toLowerCase() === "guild stats") {
+        col = c; row = r; break;
+      }
+    }
+    if (col !== -1) break;
+  }
+  if (col === -1) return null;
+
+  const title  = values[row]?.[col] || "Guild Stats";
+  const label1 = values[row + 1]?.[col] || "Avg. W/R";
+  const value1 = values[row + 1]?.[col + 1];
+  const label2 = values[row + 2]?.[col] || "Avg. Miss Rate";
+  const value2 = values[row + 2]?.[col + 1];
+
+  return { title, label1, value1, label2, value2 };
 }
 
 function buildPlayerOptions(rows) {
@@ -72,6 +95,7 @@ function renderStats(row) {
   const joinedRaw = pick(row, "Joined", "Season Join Date");
   const joined    = joinedRaw ?? "–";
 
+  // Sheet column "D/T Hits" (fallback to old "DeadTower Total")
   const dead = toNum(pick(row, "D/T Hits", "DeadTower Total")) || 0;
 
   const goodWR = Number(wr) >= 0.85;
@@ -91,24 +115,42 @@ function renderStats(row) {
   `;
 }
 
+function renderGuildStats(gs) {
+  if (!gs) {
+    $guildTitle.textContent = "Guild Stats";
+    $guildStats.innerHTML = `<div class="placeholder">Guild stats unavailable.</div>`;
+    return;
+  }
+  $guildTitle.textContent = String(gs.title || "Guild Stats");
+
+  const v1 = toPercent(gs.value1);
+  const v2 = toPercent(gs.value2);
+
+  $guildStats.innerHTML = `
+    <div class="stat"><div class="k">${escHTML(gs.label1 || "Avg. W/R")}</div><div class="v">${v1}</div></div>
+    <div class="stat"><div class="k">${escHTML(gs.label2 || "Avg. Miss Rate")}</div><div class="v">${v2}</div></div>
+  `;
+}
+
 async function load() {
   try {
     $err.classList.add('hidden');
     $err.textContent = '';
 
-    const url = endpoint(SHEET_ID, RANGE_A1) + `&t=${Date.now()}`; // anti-cache
+    const url = endpoint(SHEET_ID, RANGE_A1) + `&t=${Date.now()}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
 
-    const { rows } = parseRows(json.values);
+    const { rows, values } = parseRows(json.values);
     if (!rows.length) throw new Error('No data found.');
 
     buildPlayerOptions(rows);
     window._guildRows = rows;
     $last.textContent = `Loaded at ${new Date().toLocaleString()}`;
 
-    // Optional preselect via ?p=Name
+    renderGuildStats(extractGuildStats(values));
+
     const pre = new URLSearchParams(location.search).get('p');
     if (pre) {
       $sel.value = pre;

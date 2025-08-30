@@ -1,10 +1,51 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="pt-BR">
 <head>
-    <meta http-equiv="refresh" content="0; url=/fuwafuwa">
-    <title>Redirecting to FuwaFuwa Guild Wars Tracker</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FuwaFuwa – Guild Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <p>Redirecting to <a href="/fuwafuwa">FuwaFuwa Guild Wars Tracker</a>...</p>
+<header class="container">
+<h1>FuwaFuwa – Guild Dashboard</h1>
+<p class="subtitle">Selecione seu nome para ver estatísticas atualizadas</p>
+</header>
+
+
+<main class="container">
+<section class="card">
+<label class="label" for="playerSelect">Jogador</label>
+<select id="playerSelect" class="select">
+<option value="">Carregando jogadores...</option>
+</select>
+<div id="lastUpdated" class="muted"></div>
+</section>
+
+
+<section class="grid">
+<article class="card" id="statsCard">
+<h2 class="card-title">Estatísticas</h2>
+<div id="stats" class="stats">
+<div class="placeholder">Escolha um jogador para ver os dados.</div>
+</div>
+</article>
+</section>
+
+
+<div id="error" class="error hidden"></div>
+</main>
+
+
+<footer class="container footer">
+<small>Atualiza ao vivo da planilha Google Sheets. © FuwaFuwa</small>
+</footer>
+
+
+<script src="config.js"></script>
+<script src="app.js" type="module"></script>
 </body>
 </html>

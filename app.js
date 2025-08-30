@@ -1,5 +1,5 @@
 // app.js (ESM). Make sure you ALSO have a 'config.js' file in the same folder.
-import { SHEET_ID, API_KEY, RANGE_A1 } from "./config.js";
+import { SHEET_ID, API_KEY, RANGE_A1 } from "./config.js?v=1";
 
 const $sel  = document.querySelector('#playerSelect');
 const $stats= document.querySelector('#stats');

@@ -1,5 +1,5 @@
-// app.js (ESM). Files keep the same names. No renames.
-import { SHEET_ID, API_KEY, RANGE_A1 } from "./config.js?v=1";
+const VER = document.querySelector('meta[name="build"]')?.content || Date.now().toString();
+const { SHEET_ID, API_KEY, RANGE_A1 } = await import(`./config.js?v=${VER}`);
 
 const $sel  = document.querySelector('#playerSelect');
 const $stats= document.querySelector('#stats');
@@ -26,7 +26,7 @@ function escHTML(s) {
 function escAttr(s) {
   return String(s).replace(/"/g, '&quot;');
 }
-// picks the first defined value from a list of keys
+
 function pick(obj, ...keys) {
   for (const k of keys) {
     if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] !== undefined) return obj[k];
@@ -53,8 +53,8 @@ function buildPlayerOptions(rows) {
     .filter(Boolean)
     .sort((a,b)=>a.localeCompare(b));
 
-  $sel.innerHTML = `<option value="">Select...</option>`
-    + names.map(n => `<option value="${escAttr(n)}">${escHTML(n)}</option>`).join("");
+  $sel.innerHTML = `<option value="">Select...</option>` +
+    names.map(n => `<option value="${escAttr(n)}">${escHTML(n)}</option>`).join("");
 }
 
 function renderStats(row) {
@@ -69,11 +69,9 @@ function renderStats(row) {
   const atks   = toNum(row["Total Atks"]);
   const mr     = row["Miss Rate"];
 
-  // Sheet column stays "Joined" (or you may rename it later). UI label will be "Season Join Date".
   const joinedRaw = pick(row, "Joined", "Season Join Date");
   const joined    = joinedRaw ?? "–";
 
-  // Sheet column is "D/T Hits" (with fallback to older "DeadTower Total", if present)
   const dead = toNum(pick(row, "D/T Hits", "DeadTower Total")) || 0;
 
   const goodWR = Number(wr) >= 0.85;

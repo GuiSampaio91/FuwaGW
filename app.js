@@ -114,4 +114,12 @@ async function load() {
   }
 }
 
-$se
+$sel.addEventListener('change', () => {
+  const name = $sel.value;
+  if (!name) return renderStats(null);
+  const rows = window._guildRows || [];
+  const row = rows.find(r => (r["Player"] || "").toString().trim() === name);
+  renderStats(row || null);
+});
+
+load();

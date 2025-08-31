@@ -181,24 +181,27 @@ function attachSortable(tableEl, getRows, paint, types){
     const type = th.dataset.type || types[idx] || 'text';
     th.style.cursor = 'pointer';
     th.addEventListener('click', () => {
-      // toggle
-      const now = th.getAttribute('aria-sort');
+      const now = th.getAttribute('aria-sort');                 // lê primeiro
       const dir = (now === 'ascending') ? 'descending' : 'ascending';
-      // limpa outros
-      ths.forEach(h => h.removeAttribute('aria-sort'));
-      th.setAttribute('aria-sort', dir);
+      ths.forEach(h => h.removeAttribute('aria-sort'));         // depois limpa os demais
+      th.setAttribute('aria-sort', dir);                        // aplica no clicado
 
       const rows = getRows();
-      const comp = (type === 'number') ? cmpNum : (type === 'percent') ? cmpPct : cmpText;
+      const comp = (type === 'number') ? (a,b)=> (Number(a)||0)-(Number(b)||0)
+                 : (type === 'percent')? (a,b)=>{
+                      const p = s => (typeof s === 'string' && s.includes('%')) ? parseFloat(s) : (Number(s)>1? Number(s): Number(s)*100);
+                      return (p(a)||0) - (p(b)||0);
+                    }
+                 : (a,b)=> String(a).localeCompare(String(b));
       rows.sort((a,b) => {
-        const av = a[idx], bv = b[idx];
-        const r = comp(av, bv);
+        const r = comp(a[idx], b[idx]);
         return dir === 'ascending' ? r : -r;
       });
       paint(rows);
     });
   });
 }
+
 
 // === insights render ===
 function renderInsights(stats) {

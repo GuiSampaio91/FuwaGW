@@ -8,7 +8,14 @@ const qp = new URLSearchParams(location.search);
 async function fetchHeroes() {
   const url = `${APPS_SCRIPT.BASE_URL}?route=heroes`;
   const res = await fetch(url);
-  const js = await res.json();
+  const raw = await res.text();
+  let js;
+  try { js = JSON.parse(raw); }
+  catch (e) {
+  console.error('POST raw (non-JSON):', raw);
+  throw new Error(`Non-JSON response (HTTP ${res.status})`);
+}
+
   if (!js.ok) throw new Error(js.error || 'Failed to load heroes');
   return js.heroes || [];
 }

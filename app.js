@@ -162,10 +162,14 @@ function fillTable(tbody, rows, cols) {
 // === sort infra ===
 function parsePercentCell(s) {
   if (s == null || s === "") return NaN;
-  if (typeof s === "string" && s.includes("%")) return parseFloat(s.replace("%","").trim());
+  if (typeof s === "string") {
+    const t = s.replace('%','').replace(',','.').trim();
+    const n = Number(t);
+    if (Number.isFinite(n)) return n;      // "50%" ou "50,0" -> 50
+  }
   const n = Number(s);
-  if (!isFinite(n)) return NaN;
-  return n > 1 ? n : n * 100;
+  if (!Number.isFinite(n)) return NaN;
+  return n > 1 ? n : n * 100;              // 0.5 -> 50
 }
 function cmpText(a,b){ return String(a).localeCompare(String(b)); }
 function cmpNum(a,b){ return (Number(a)||0) - (Number(b)||0); }
@@ -174,31 +178,43 @@ function cmpPct(a,b){ return parsePercentCell(a) - parsePercentCell(b); }
 /** headers clicáveis com toggle ↑/↓ */
 function attachSortable(tableEl, getRows, paint, types){
   const ths = tableEl.querySelectorAll('thead th');
+
+  const cmpText = (a,b) => String(a).localeCompare(String(b));
+  const cmpNum  = (a,b) => (Number(a)||0) - (Number(b)||0);
+  const cmpPct  = (a,b) => {
+    const av = parsePercentCell(a); const bv = parsePercentCell(b);
+    if (!Number.isFinite(av) && !Number.isFinite(bv)) return 0;
+    if (!Number.isFinite(av)) return -1;
+    if (!Number.isFinite(bv)) return 1;
+    return av - bv;
+  };
+
   ths.forEach((th, idx) => {
     const type = th.dataset.type || types[idx] || 'text';
     th.style.cursor = 'pointer';
+
     th.addEventListener('click', () => {
-      const now = th.getAttribute('aria-sort');                 // lê primeiro
-      const dir = (now === 'ascending') ? 'descending' : 'ascending';
-      ths.forEach(h => h.removeAttribute('aria-sort'));         // depois limpa os demais
-      th.setAttribute('aria-sort', dir);                        // aplica no clicado
+      // direção anterior deste TH
+      const prev = th.dataset.dir || '';
+      const dir  = (prev === 'asc') ? 'desc' : 'asc';
+      // salva no próprio TH e limpa nos outros
+      ths.forEach(h => { if (h!==th) { h.dataset.dir=''; h.removeAttribute('aria-sort'); }});
+      th.dataset.dir = dir;
+      th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
 
       const rows = getRows();
-      const comp = (type === 'number') ? (a,b)=> (Number(a)||0)-(Number(b)||0)
-                 : (type === 'percent')? (a,b)=>{
-                      const p = s => (typeof s === 'string' && s.includes('%')) ? parseFloat(s) : (Number(s)>1? Number(s): Number(s)*100);
-                      return (p(a)||0) - (p(b)||0);
-                    }
-                 : (a,b)=> String(a).localeCompare(String(b));
+      const comp = (type === 'number') ? cmpNum : (type === 'percent') ? cmpPct : cmpText;
+
       rows.sort((a,b) => {
         const r = comp(a[idx], b[idx]);
-        return dir === 'ascending' ? r : -r;
+        const safe = Number.isFinite(r) ? r : 0;
+        return dir === 'asc' ? safe : -safe;
       });
+
       paint(rows);
     });
   });
 }
-
 
 // === insights render ===
 function renderInsights(stats) {

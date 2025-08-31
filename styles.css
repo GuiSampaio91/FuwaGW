@@ -163,3 +163,35 @@ label { font-size: 13px; color: var(--muted); display: block; margin: 2px 0 6px;
   .data-table tbody td  { font-size: 13px; padding: 10px 10px; }
 }
 
+/* === Sortable tables === */
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; table-layout: auto; }
+.data-table thead th { position: sticky; top: 0; z-index: 1; background: var(--panel); color: var(--muted);
+  font-weight: 600; font-size: 13px; text-align: left; padding: 10px 14px; }
+.data-table tbody tr { background: #0c1218; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.data-table tbody td { padding: 12px 14px; vertical-align: middle; font-size: 14px; line-height: 1.25; }
+.data-table tbody tr:hover { background: #0d1720; border-color: #2a3a48; }
+
+.data-table.sortable thead th { cursor: pointer; user-select: none; }
+.data-table.sortable thead th::after {
+  content: '↕'; opacity: .45; margin-left: 6px; font-size: 11px;
+}
+.data-table.sortable thead th[aria-sort="ascending"]::after  { content: '↑'; opacity: 1; }
+.data-table.sortable thead th[aria-sort="descending"]::after { content: '↓'; opacity: 1; }
+
+.data-table th:nth-child(2), .data-table td:nth-child(2),
+.data-table th:nth-child(3), .data-table td:nth-child(3) { white-space: nowrap; text-align: right; }
+
+/* Quebra amigável na 1ª coluna (nomes longos) */
+#tblHeroStats td:first-child, #tblEnemy td:first-child, #tblMatchups td:first-child {
+  white-space: normal; word-break: break-word; text-align: left;
+}
+
+/* Contenção visual: lista grande dentro do card sem “estourar” */
+.table-wrap { overflow: auto; max-height: 420px; }
+
+/* Responsivo */
+@media (max-width: 700px) {
+  .data-table thead th { font-size: 12px; padding: 8px 10px; }
+  .data-table tbody td  { font-size: 13px; padding: 10px 10px; }
+}
+

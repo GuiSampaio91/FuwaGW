@@ -1,4 +1,4 @@
-import { APPS_SCRIPT } from '../config.js';
+import { APPS_SCRIPT } from './config.js';
 
 const $ = (id) => document.getElementById(id);
 const qp = new URLSearchParams(location.search);
@@ -88,14 +88,12 @@ function renderRounds() {
   }
 }
 
-/** Garante que exista ao menos 1 MyHero e 1 EnemyHero preenchidos no formulário como um todo */
+/** exige ao menos 1 MyHero e 1 EnemyHero preenchidos (em qualquer round) */
 function hasMinHeroes() {
-  const my = Array.from(document.querySelectorAll('[id*="_my"][id$="1"],[id*="_my"][id$="2"],[id*="_my"][id$="3"]'))
-    .filter(el => el.tagName === 'INPUT' && el.type !== 'checkbox')
+  const my = Array.from(document.querySelectorAll('input[id$="_my1"],input[id$="_my2"],input[id$="_my3"]'))
     .some(el => el.value.trim().length > 0);
 
-  const enemy = Array.from(document.querySelectorAll('[id*="_e1"],[id*="_e2"],[id*="_e3"]'))
-    .filter(el => el.tagName === 'INPUT')
+  const enemy = Array.from(document.querySelectorAll('input[id$="_e1"],input[id$="_e2"],input[id$="_e3"]'))
     .some(el => el.value.trim().length > 0);
 
   return my && enemy;
@@ -146,7 +144,7 @@ async function submitForm(ev) {
 
     const res = await fetch(APPS_SCRIPT.BASE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body
     });
     const js = await res.json();
@@ -160,6 +158,7 @@ async function submitForm(ev) {
 }
 
 async function main() {
+  // preenche o nome vindo do botão do index: add.html?p=<PlayerName>
   $('player').value = qp.get('p') || '';
   renderRounds();
 

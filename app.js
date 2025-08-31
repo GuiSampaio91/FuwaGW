@@ -212,6 +212,31 @@ function renderInsights(stats) {
     r => r.battles
   ]);
 }
+function renderGuildStats(gs) {
+  if (!gs || (gs.value1 == null && gs.value2 == null)) {
+    $guildTitle.textContent = "Guild Stats";
+    $guildStats.innerHTML = `
+      <div class="placeholder">Guild stats not found in the selected range.</div>
+    `;
+    return;
+  }
+
+  $guildTitle.textContent = String(gs.title || "Guild Stats");
+
+  const v1 = toPercent(gs.value1);
+  const v2 = toPercent(gs.value2);
+
+  $guildStats.innerHTML = `
+    <div class="stat">
+      <div class="k">${escHTML(gs.label1 || "Avg. W/R")}</div>
+      <div class="v">${v1}</div>
+    </div>
+    <div class="stat">
+      <div class="k">${escHTML(gs.label2 || "Avg. Miss Rate")}</div>
+      <div class="v">${v2}</div>
+    </div>
+  `;
+}
 
 async function load() {
   try {

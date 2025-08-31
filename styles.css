@@ -39,8 +39,12 @@ header h1 { margin: 0 0 6px; font-size: 28px; font-weight: 700; }
 }
 .muted { margin-top: 8px; color: var(--muted); font-size: 12px; }
 
-.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-@media (min-width: 900px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+/* Ajuste para suportar 4+ cards sem quebrar */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
 
 .stat {
   background: #0c1218; border: 1px solid var(--border); border-radius: 12px; padding: 12px;

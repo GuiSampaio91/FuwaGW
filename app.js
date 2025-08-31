@@ -147,6 +147,45 @@ function fillTable(tbody, rows, cols) {
   });
 }
 
+async function loadGuildAggregates() {
+  if (!APPS_SCRIPT || !APPS_SCRIPT.BASE_URL) return null;
+  const url = `${APPS_SCRIPT.BASE_URL}?route=guild`;
+  try {
+    const r = await fetch(url);
+    const j = await r.json();
+    if (!j.ok) return null;
+    return j.guild || null;
+  } catch { return null; }
+}
+
+// MVP: maior W/R; empate resolve por menor Miss Rate, depois Wins, depois Draws, depois ordem alfabética
+function computeMVP(rows) {
+  const norm = v => Number(v ?? 0);
+  const has = (r,k) => r[k] !== undefined && r[k] !== null && r[k] !== '';
+
+  const candidates = rows
+    .map(r => ({
+      name: (r['Player']||'').toString().trim(),
+      wr:   norm(r['W/R']),
+      mr:   norm(('Miss Rate' in r) ? r['Miss Rate'] : r['MR']),
+      wins: norm(r['Wins']),
+      draws:norm(r['Draws']),
+    }))
+    .filter(x => x.name && Number.isFinite(x.wr));
+
+  if (!candidates.length) return null;
+
+  candidates.sort((a,b) =>
+    (b.wr - a.wr) ||
+    (a.mr - b.mr) ||
+    (b.wins - a.wins) ||
+    (b.draws - a.draws) ||
+    a.name.localeCompare(b.name)
+  );
+
+  return candidates[0];
+}
+
 // === sort infra ===
 function parsePercentCell(s) {
   if (s == null || s === "") return NaN;
@@ -249,18 +288,46 @@ function renderInsights(stats) {
   attachSortable(document.querySelector('#tblMatchups'), () => mus, paintMu, ['text','percent','number']);
 }
 
-function renderGuildStats(gs) {
-  if (!gs || (gs.value1 == null && gs.value2 == null)) {
-    $guildTitle.textContent = "Guild Stats";
-    $guildStats.innerHTML = `<div class="placeholder">Guild stats not found in the selected range.</div>`;
-    return;
-  }
-  $guildTitle.textContent = String(gs.title || "Guild Stats");
-  const v1 = toPercent(gs.value1);
-  const v2 = toPercent(gs.value2);
+// app.js — substitua a versão atual de renderGuildStats por esta:
+function renderGuildStats(gs, mvp, agg) {
+  $guildTitle.textContent = String(gs?.title || "Guild Stats");
+
+  const v1 = toPercent(gs?.value1);
+  const v2 = toPercent(gs?.value2);
+
+  const mvpHtml = mvp
+    ? `<div class="stat">
+         <div class="k">MVP</div>
+         <div class="v">${escHTML(mvp.name)}</div>
+         <div class="k">W/R · Miss · Wins</div>
+         <div class="v">${toPercent(mvp.wr)} · ${toPercent(mvp.mr)} · ${mvp.wins}</div>
+       </div>`
+    : `<div class="stat"><div class="k">MVP</div><div class="v">–</div></div>`;
+
+  const usedHtml = agg?.mostUsedHero
+    ? `<div class="stat">
+         <div class="k">Most Used Hero</div>
+         <div class="v">${escHTML(agg.mostUsedHero.hero)}</div>
+         <div class="k">Uses</div>
+         <div class="v">${agg.mostUsedHero.uses}</div>
+       </div>`
+    : `<div class="stat"><div class="k">Most Used Hero</div><div class="v">–</div></div>`;
+
+  const intHtml = agg?.intbringer
+    ? `<div class="stat">
+         <div class="k">Intbringer</div>
+         <div class="v">${escHTML(agg.intbringer.hero)}</div>
+         <div class="k">Enemy W/R vs us</div>
+         <div class="v">${toPercent(agg.intbringer.enemyWinRate)}</div>
+       </div>`
+    : `<div class="stat"><div class="k">Intbringer</div><div class="v">–</div></div>`;
+
   $guildStats.innerHTML = `
-    <div class="stat"><div class="k">${escHTML(gs.label1 || "Avg. W/R")}</div><div class="v">${v1}</div></div>
-    <div class="stat"><div class="k">${escHTML(gs.label2 || "Avg. Miss Rate")}</div><div class="v">${v2}</div></div>
+    <div class="stat"><div class="k">${escHTML(gs?.label1 || "Avg. W/R")}</div><div class="v">${v1}</div></div>
+    <div class="stat"><div class="k">${escHTML(gs?.label2 || "Avg. Miss Rate")}</div><div class="v">${v2}</div></div>
+    ${mvpHtml}
+    ${usedHtml}
+    ${intHtml}
   `;
 }
 
@@ -293,7 +360,10 @@ async function load() {
     window._guildRows = rows;
     $last.textContent = `Loaded at ${new Date().toLocaleString()}`;
 
-    renderGuildStats(extractGuildStats(values));
+    const guildCells = extractGuildStats(values);          // já existia
+    const mvp = computeMVP(rows);                          // NOVO
+    const agg = await loadGuildAggregates();               // NOVO
+    renderGuildStats(guildCells, mvp, agg);                // troque a chamada antiga
 
     const pre = new URLSearchParams(location.search).get('p');
     if (pre) {

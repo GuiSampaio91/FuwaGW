@@ -27,8 +27,8 @@ function status(msg, ok = true) {
   el.className = ok ? 'ok' : 'err';
 }
 
-function heroInput(id) {
-  return `<input list="heroes" id="${id}" required/>`;
+function heroInput(id, required = false) {
+  return `<input list="heroes" id="${id}" class="input"${required ? ' required' : ''}/>`;
 }
 function diedChk(id) {
   return `<label class="chk"><input type="checkbox" id="${id}"/> died</label>`;
@@ -43,15 +43,15 @@ function renderRounds() {
   for (let attack = 1; attack <= 3; attack++) {
     for (let round = 1; round <= 2; round++) {
       const blockId = `A${attack}R${round}`;
-      const div = document.createElement('fieldset');
-      div.className = 'round-block';
-      div.innerHTML = `
+      const fs = document.createElement('fieldset');
+      fs.className = 'round-block';
+      fs.innerHTML = `
         <legend>Attack ${attack} — Round ${round}</legend>
 
         <div class="trio myteam">
           <div>
             <label>My Hero 1</label>
-            ${heroInput(`${blockId}_my1`)}
+            ${heroInput(`${blockId}_my1`, attack === 1 && round === 1)}
             ${diedChk(`${blockId}_my1Died`)}
           </div>
           <div>
@@ -66,10 +66,10 @@ function renderRounds() {
           </div>
         </div>
 
-        <div class="trio enemy">
+        <div class="trio enemy" style="margin-top:8px;">
           <div>
             <label>Enemy Hero 1</label>
-            ${heroInput(`${blockId}_e1`)}
+            ${heroInput(`${blockId}_e1`, attack === 1 && round === 1)}
           </div>
           <div>
             <label>Enemy Hero 2</label>
@@ -81,11 +81,24 @@ function renderRounds() {
           </div>
         </div>
 
-        <div class="row">${winChk(`${blockId}_win`)}</div>
+        <div class="row" style="margin-top:8px;">${winChk(`${blockId}_win`)}</div>
       `;
-      host.appendChild(div);
+      host.appendChild(fs);
     }
   }
+}
+
+/** Garante que exista ao menos 1 MyHero e 1 EnemyHero preenchidos no formulário como um todo */
+function hasMinHeroes() {
+  const my = Array.from(document.querySelectorAll('[id*="_my"][id$="1"],[id*="_my"][id$="2"],[id*="_my"][id$="3"]'))
+    .filter(el => el.tagName === 'INPUT' && el.type !== 'checkbox')
+    .some(el => el.value.trim().length > 0);
+
+  const enemy = Array.from(document.querySelectorAll('[id*="_e1"],[id*="_e2"],[id*="_e3"]'))
+    .filter(el => el.tagName === 'INPUT')
+    .some(el => el.value.trim().length > 0);
+
+  return my && enemy;
 }
 
 function payloadFromForm() {
@@ -116,14 +129,18 @@ function payloadFromForm() {
     warIdOrDate: $('warId').value.trim(),
     player: $('player').value.trim(),
     passcode: $('passcode').value,
-    rounds,
-    notes: $('notes').value.trim()
+    rounds
   };
 }
 
 async function submitForm(ev) {
   ev.preventDefault();
   try {
+    if (!hasMinHeroes()) {
+      status('Fill at least 1 My Hero and 1 Enemy Hero in any round.', false);
+      return;
+    }
+
     status('Submitting...');
     const body = JSON.stringify(payloadFromForm());
 
@@ -137,7 +154,6 @@ async function submitForm(ev) {
 
     status('OK! Saved #' + js.submissionId);
     $('passcode').value = '';
-    $('notes').value = '';
   } catch {
     status('Network or server error', false);
   }

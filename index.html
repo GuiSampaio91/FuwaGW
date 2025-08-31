@@ -28,6 +28,9 @@
       <select id="playerSelect" class="select">
         <option value="">Loading players...</option>
       </select>
+      <div class="actions-row">
+        <a id="addBtn" class="btn" href="#" hidden>Add GW Record</a>
+      </div>
       <div id="lastUpdated" class="muted" aria-live="polite"></div>
     </section>
 
@@ -43,6 +46,57 @@
         <h2 class="card-title" id="guildTitle">Guild Stats</h2>
         <div id="guildStats" class="stats">
           <div class="placeholder">Loading guild stats…</div>
+        </div>
+      </article>
+    </section>
+
+    <!-- NEW: Insights section -->
+    <section id="insights" class="grid">
+      <article class="card">
+        <div class="card-head">
+          <h2 class="card-title">Heroes Stats</h2>
+          <div class="table-tools">
+            <button id="sortHeroByName" class="btn-sm" type="button">Sort by Hero</button>
+            <button id="sortHeroByWR" class="btn-sm" type="button">Sort by W/R</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="tblHeroStats">
+            <thead>
+              <tr><th>Hero</th><th>W/R</th><th>Battles</th><th>Deaths</th></tr>
+            </thead>
+            <tbody>
+              <tr class="placeholder"><td colspan="4">Pick a player to see data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2 class="card-title">Enemy Heroes (your loss rate)</h2>
+        <div class="table-wrap">
+          <table id="tblEnemy">
+            <thead>
+              <tr><th>Enemy Hero</th><th>Loss Rate</th><th>Battles</th></tr>
+            </thead>
+            <tbody>
+              <tr class="placeholder"><td colspan="3">Pick a player to see data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2 class="card-title">Matchups</h2>
+        <div class="table-wrap">
+          <table id="tblMatchups">
+            <thead>
+              <tr><th>Team</th><th>W/R</th><th>Battles</th></tr>
+            </thead>
+            <tbody>
+              <tr class="placeholder"><td colspan="3">Pick a player to see data.</td></tr>
+            </tbody>
+          </table>
         </div>
       </article>
     </section>

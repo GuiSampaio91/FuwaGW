@@ -52,43 +52,46 @@
 
     <section id="insights" class="grid">
       <article class="card">
-        <div class="card-head">
-          <h2 class="card-title">Heroes Stats</h2>
-          <div class="table-tools">
-            <button id="sortHeroByName" class="btn-sm" type="button">Sort by Hero</button>
-            <button id="sortHeroByWR" class="btn-sm" type="button">Sort by W/R</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table id="tblHeroStats" class="data-table sortable">
-            <thead>
-              <tr><th>Hero</th><th>W/R</th><th>Battles</th><th>Deaths</th></tr>
-            </thead>
-              <tr>
-                <th data-type="text">Hero</th>
-                <th data-type="percent">W/R</th>
-                <th data-type="number">Battles</th>
-                <th data-type="number">Deaths</th>
-              </tr>
-          </table>
-        </div>
-      </article>
+    <div class="card-head">
+      <h2 class="card-title">Heroes Stats</h2>
+      <!-- REMOVER: <div class="table-tools">...</div> -->
+    </div>
+  <div class="table-wrap">
+    <table id="tblHeroStats" class="data-table sortable">
+      <thead>
+        <tr>
+          <th data-type="text">Hero</th>
+          <th data-type="percent">W/R</th>
+          <th data-type="number">Battles</th>
+          <th data-type="number">Deaths</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="placeholder"><td colspan="4">Pick a player to see data.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</article>
+
 
       <article class="card">
-        <h2 class="card-title">Enemy Heroes (your loss rate)</h2>
-        <div class="table-wrap">
-          <table id="tblEnemy" class="data-table sortable">
-            <thead>
-              <tr><th>Enemy Hero</th><th>Loss Rate</th><th>Battles</th></tr>
-            </thead>
-              <tr>
-                <th data-type="text">Enemy Hero</th>
-                <th data-type="percent">Loss Rate</th>
-                <th data-type="number">Battles</th>
-              </tr>
-          </table>
-        </div>
-      </article>
+  <h2 class="card-title">Enemy Heroes (your loss rate)</h2>
+  <div class="table-wrap">
+    <table id="tblEnemy" class="data-table sortable">
+      <thead>
+        <tr>
+          <th data-type="text">Enemy Hero</th>
+          <th data-type="percent">Loss Rate</th>
+          <th data-type="number">Battles</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="placeholder"><td colspan="3">Pick a player to see data.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</article>
+
 
       <article class="card">
         <h2 class="card-title">Matchups</h2>

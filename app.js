@@ -1,6 +1,7 @@
 // Cache-busting with GitHub Pages build hash (no renames)
 const VER = document.querySelector('meta[name="build"]')?.content || Date.now().toString();
-const { SHEET_ID, API_KEY, RANGE_A1 } = await import(`./config.js?v=${VER}`);
+const cfg = await import(`./config.js?v=${VER}`);
+const { SHEET_ID, API_KEY, RANGE_A1, APPS_SCRIPT } = cfg;
 
 const $sel        = document.querySelector('#playerSelect');
 const $stats      = document.querySelector('#stats');
@@ -8,6 +9,14 @@ const $err        = document.querySelector('#error');
 const $last       = document.querySelector('#lastUpdated');
 const $guildTitle = document.querySelector('#guildTitle');
 const $guildStats = document.querySelector('#guildStats');
+const $addBtn     = document.querySelector('#addBtn');
+
+// Insights DOM
+const $tblHeroStats = document.querySelector('#tblHeroStats tbody');
+const $tblEnemy     = document.querySelector('#tblEnemy tbody');
+const $tblMatchups  = document.querySelector('#tblMatchups tbody');
+const $btnSortHeroByName = document.querySelector('#sortHeroByName');
+const $btnSortHeroByWR   = document.querySelector('#sortHeroByWR');
 
 const endpoint = (sheetId, rangeA1) =>
   `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(rangeA1)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&key=${API_KEY}`;
@@ -140,21 +149,68 @@ function renderStats(row) {
   `;
 }
 
-function renderGuildStats(gs) {
-  if (!gs || (gs.value1 == null && gs.value2 == null)) {
-    $guildTitle.textContent = "Guild Stats";
-    $guildStats.innerHTML = `<div class="placeholder">Guild stats not found in the selected range.</div>`;
+// === NEW: Insights ===
+function fmtPct(x) { return (x*100).toFixed(1) + '%'; }
+function fillTable(tbody, rows, cols) {
+  tbody.innerHTML = '';
+  if (!rows || !rows.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'placeholder';
+    const td = document.createElement('td');
+    td.colSpan = cols.length;
+    td.textContent = 'No data.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
     return;
   }
-  $guildTitle.textContent = String(gs.title || "Guild Stats");
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    cols.forEach(c => {
+      const td = document.createElement('td');
+      td.textContent = (typeof c === 'function') ? c(r) : r[c];
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
 
-  const v1 = toPercent(gs.value1);
-  const v2 = toPercent(gs.value2);
+async function loadProfileStats(player) {
+  if (!APPS_SCRIPT || !APPS_SCRIPT.BASE_URL) return null;
+  const url = `${APPS_SCRIPT.BASE_URL}?route=profile&player=${encodeURIComponent(player)}`;
+  const res = await fetch(url);
+  const js  = await res.json();
+  if (!js.ok) return null;
+  return js.stats;
+}
 
-  $guildStats.innerHTML = `
-    <div class="stat"><div class="k">${escHTML(gs.label1 || "Avg. W/R")}</div><div class="v">${v1}</div></div>
-    <div class="stat"><div class="k">${escHTML(gs.label2 || "Avg. Miss Rate")}</div><div class="v">${v2}</div></div>
-  `;
+function renderInsights(stats) {
+  // Heroes Stats
+  let hs = (stats?.heroStats || []).slice();
+  const paintHero = () => fillTable($tblHeroStats, hs, [
+    r => r.hero,
+    r => fmtPct(r.wr),
+    r => r.battles,
+    r => r.deaths
+  ]);
+  if ($btnSortHeroByName) $btnSortHeroByName.onclick = () => { hs.sort((a,b)=>a.hero.localeCompare(b.hero)); paintHero(); };
+  if ($btnSortHeroByWR)   $btnSortHeroByWR.onclick   = () => { hs.sort((a,b)=> b.wr - a.wr || b.battles - a.battles); paintHero(); };
+  paintHero();
+
+  // Enemy loss rate (already filtered to >0 losses server-side)
+  const enemy = (stats?.enemyLossrate || []).slice().sort((a,b)=> b.lossRate - a.lossRate || b.battles - a.battles);
+  fillTable($tblEnemy, enemy, [
+    r => r.enemyHero,
+    r => fmtPct(r.lossRate),
+    r => r.battles
+  ]);
+
+  // Matchups (team of 3 enemy heroes)
+  const mus = (stats?.matchups || []).slice().sort((a,b)=> b.wr - a.wr || b.battles - a.battles);
+  fillTable($tblMatchups, mus, [
+    r => r.team,
+    r => fmtPct(r.wr),
+    r => r.battles
+  ]);
 }
 
 async function load() {
@@ -184,8 +240,18 @@ async function load() {
       $sel.value = pre;
       const row = rows.find(r => (r["Player"] || "").toString().trim() === pre);
       renderStats(row || null);
+      // Add button
+      if (row) {
+        $addBtn.href = `add.html?p=${encodeURIComponent(pre)}`;
+        $addBtn.hidden = false;
+        // Insights
+        const stats = await loadProfileStats(pre);
+        renderInsights(stats || {});
+      }
     } else {
       renderStats(null);
+      $addBtn.hidden = true;
+      renderInsights({ heroStats: [], enemyLossrate: [], matchups: [] });
     }
   } catch (e) {
     console.error(e);
@@ -194,12 +260,25 @@ async function load() {
   }
 }
 
-$sel.addEventListener('change', () => {
+$sel.addEventListener('change', async () => {
   const name = $sel.value;
-  if (!name) return renderStats(null);
   const rows = window._guildRows || [];
   const row = rows.find(r => (r["Player"] || "").toString().trim() === name);
-  renderStats(row || null);
+
+  if (!name || !row) {
+    renderStats(null);
+    $addBtn.hidden = true;
+    renderInsights({ heroStats: [], enemyLossrate: [], matchups: [] });
+    return;
+  }
+
+  renderStats(row);
+  // Add button points to add.html with prefilled player
+  $addBtn.href = `add.html?p=${encodeURIComponent(name)}`;
+  $addBtn.hidden = false;
+
+  const stats = await loadProfileStats(name);
+  renderInsights(stats || {});
 });
 
 load();

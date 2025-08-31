@@ -95,4 +95,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin: 2px 0 6px;
 
 .table-wrap { overflow: auto; }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.back-link { display:inline-block; margin-bottom:8px; color:var(--accent); text-decoration:none; font-weight:600; }
+.back-link:hover { text-decoration:underline; }
+.page-title { margin:0 0 6px; font-size:24px; font-weight:700; }
 

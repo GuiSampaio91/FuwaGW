@@ -8,8 +8,10 @@ layout: default
   <meta charset="utf-8"/>
   <title>FuwaFuwa — Add Guild War Record</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link rel="stylesheet" href="../styles.css"/>
-  <script type="module" src="./add.js?v={{ site.github.build_revision }}"></script>
+
+  <!-- Se usar caminho absoluto, troque para o nome exato do repo: /FuwaFuwa/ ou /fuwafuwa/ -->
+  <!-- <link rel="stylesheet" href="/FuwaFuwa/styles.css"/> -->
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body class="page--add">
   <div class="container">
@@ -48,5 +50,8 @@ layout: default
       </form>
     </section>
   </div>
+
+  <!-- Se usar caminho absoluto, troque: /FuwaFuwa/add.js?v=... -->
+  <script type="module" src="add.js?v={{ site.github.build_revision }}"></script>
 </body>
 </html>

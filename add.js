@@ -1,4 +1,6 @@
-import { APPS_SCRIPT } from './config.js';
+const VER = document.querySelector('meta[name="build"]')?.content || Date.now().toString();
+const cfg = await import(`./config.js?v=${VER}`);
+const { APPS_SCRIPT } = cfg;
 
 const $ = (id) => document.getElementById(id);
 const qp = new URLSearchParams(location.search);

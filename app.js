@@ -28,17 +28,10 @@ function toPercent(x, digits = 1) {
   const val = n > 1 ? n : n * 100;
   return val.toFixed(digits) + "%";
 }
-function toNum(x) {
-  if (x == null || x === "") return 0;
-  const n = Number(x);
-  return isFinite(n) ? n : 0;
-}
+function toNum(x) { const n = Number(x); return Number.isFinite(n) ? n : 0; }
 function escHTML(s) { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function escAttr(s) { return String(s).replace(/"/g, '&quot;'); }
-function pick(obj, ...keys) {
-  for (const k of keys) if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] !== undefined) return obj[k];
-  return undefined;
-}
+function pick(obj, ...keys) { for (const k of keys) if (Object.hasOwn(obj,k) && obj[k]!==undefined) return obj[k]; }
 
 function parseRows(values) {
   if (!values || values.length < 2) return { headers: [], rows: [], values };
@@ -54,7 +47,7 @@ function parseRows(values) {
   return { headers, rows, values };
 }
 
-// === Guild mini-table (robusto) ===
+// Guild mini-table (robusto)
 function extractGuildStats(values) {
   if (!Array.isArray(values) || !values.length) return null;
   let col = -1, row = -1;
@@ -67,29 +60,31 @@ function extractGuildStats(values) {
     }
   }
   if (col !== -1) {
-    const title  = values[row]?.[col] || "Guild Stats";
-    const label1 = values[row + 1]?.[col] || "Avg. W/R";
-    const value1 = values[row + 1]?.[col + 1];
-    const label2 = values[row + 2]?.[col] || "Avg. Miss Rate";
-    const value2 = values[row + 2]?.[col + 1];
-    return { title, label1, value1, label2, value2 };
+    return {
+      title:  values[row]?.[col] || "Guild Stats",
+      label1: values[row + 1]?.[col] || "Avg. W/R",
+      value1: values[row + 1]?.[col + 1],
+      label2: values[row + 2]?.[col] || "Avg. Miss Rate",
+      value2: values[row + 2]?.[col + 1],
+    };
   }
   let r1=-1,c1=-1,r2=-1,c2=-1;
   for (let r = 0; r < values.length; r++) {
     const rowArr = values[r] || [];
     for (let c = 0; c < rowArr.length; c++) {
       const cell = String(rowArr[c] ?? "").trim().toLowerCase();
-      if (cell === "avg. w/r") { r1 = r; c1 = c; }
+      if (cell === "avg. w/r")       { r1 = r; c1 = c; }
       if (cell === "avg. miss rate") { r2 = r; c2 = c; }
     }
   }
   if (c1 !== -1 || c2 !== -1) {
-    const title = "Guild Stats";
-    const label1 = r1 !== -1 ? values[r1]?.[c1] : "Avg. W/R";
-    const value1 = r1 !== -1 ? values[r1]?.[c1 + 1] : undefined;
-    const label2 = r2 !== -1 ? values[r2]?.[c2] : "Avg. Miss Rate";
-    const value2 = r2 !== -1 ? values[r2]?.[c2 + 1] : undefined;
-    return { title, label1, value1, label2, value2 };
+    return {
+      title:  "Guild Stats",
+      label1: r1 !== -1 ? values[r1]?.[c1] : "Avg. W/R",
+      value1: r1 !== -1 ? values[r1]?.[c1 + 1] : undefined,
+      label2: r2 !== -1 ? values[r2]?.[c2] : "Avg. Miss Rate",
+      value2: r2 !== -1 ? values[r2]?.[c2 + 1] : undefined,
+    };
   }
   return null;
 }
@@ -103,20 +98,15 @@ function buildPlayerOptions(rows) {
 }
 
 function renderStats(row) {
-  if (!row) {
-    $stats.innerHTML = `<div class="placeholder">Pick a player to see data.</div>`;
-    return;
-  }
+  if (!row) { $stats.innerHTML = `<div class="placeholder">Pick a player to see data.</div>`; return; }
   const wins   = toNum(row["Wins"]);
   const draws  = toNum(row["Draws"]);
   const losses = toNum(row["Losses"]);
   const wr     = row["W/R"];
   const atks   = toNum(row["Total Atks"]);
   const mr     = row["Miss Rate"];
-  const joinedRaw = pick(row, "Joined", "Season Join Date");
-  const joined    = joinedRaw ?? "–";
-  const dead = toNum(pick(row, "D/T Hits", "DeadTower Total")) || 0;
-
+  const joined = pick(row, "Joined", "Season Join Date") ?? "–";
+  const dead   = toNum(pick(row, "D/T Hits", "DeadTower Total")) || 0;
   const goodWR = Number(wr) >= 0.85;
   const lowMR  = Number(mr) <= 0.12;
 
@@ -124,17 +114,15 @@ function renderStats(row) {
     <div class="stat"><div class="k">Wins</div><div class="v">${wins}</div></div>
     <div class="stat"><div class="k">Draws</div><div class="v">${draws}</div></div>
     <div class="stat"><div class="k">Losses</div><div class="v">${losses}</div></div>
-
     <div class="stat ${goodWR ? 'good' : ''}"><div class="k">W/R</div><div class="v">${toPercent(wr)}</div></div>
     <div class="stat ${lowMR ? 'good' : 'bad'}"><div class="k">Miss Rate</div><div class="v">${toPercent(mr)}</div></div>
     <div class="stat"><div class="k">Total Attacks</div><div class="v">${atks}</div></div>
-
     <div class="stat"><div class="k">Dead Tower Atks</div><div class="v">${dead}</div></div>
     <div class="stat"><div class="k">Season Join Date</div><div class="v">${escHTML(joined)}</div></div>
   `;
 }
 
-// === table paint helpers ===
+// === paint helpers ===
 function fmtPct(x) { return (x*100).toFixed(1) + '%'; }
 function fillTable(tbody, rows, cols) {
   tbody.innerHTML = '';
@@ -165,17 +153,12 @@ function parsePercentCell(s) {
   if (typeof s === "string") {
     const t = s.replace('%','').replace(',','.').trim();
     const n = Number(t);
-    if (Number.isFinite(n)) return n;      // "50%" ou "50,0" -> 50
+    if (Number.isFinite(n)) return n;
   }
   const n = Number(s);
   if (!Number.isFinite(n)) return NaN;
-  return n > 1 ? n : n * 100;              // 0.5 -> 50
+  return n > 1 ? n : n * 100; // 0.5 -> 50
 }
-function cmpText(a,b){ return String(a).localeCompare(String(b)); }
-function cmpNum(a,b){ return (Number(a)||0) - (Number(b)||0); }
-function cmpPct(a,b){ return parsePercentCell(a) - parsePercentCell(b); }
-
-/** headers clicáveis com toggle ↑/↓ */
 function attachSortable(tableEl, getRows, paint, types){
   const ths = tableEl.querySelectorAll('thead th');
 
@@ -192,12 +175,9 @@ function attachSortable(tableEl, getRows, paint, types){
   ths.forEach((th, idx) => {
     const type = th.dataset.type || types[idx] || 'text';
     th.style.cursor = 'pointer';
-
     th.addEventListener('click', () => {
-      // direção anterior deste TH
       const prev = th.dataset.dir || '';
       const dir  = (prev === 'asc') ? 'desc' : 'asc';
-      // salva no próprio TH e limpa nos outros
       ths.forEach(h => { if (h!==th) { h.dataset.dir=''; h.removeAttribute('aria-sort'); }});
       th.dataset.dir = dir;
       th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
@@ -216,24 +196,22 @@ function attachSortable(tableEl, getRows, paint, types){
   });
 }
 
-// === insights render ===
+// === render insights (3 tabelas) ===
 function renderInsights(stats) {
-  // 1) Hero Stats
+  // Hero Stats
   let hs = (stats?.heroStats || []).map(r => [r.hero, (r.wr*100).toFixed(1)+'%', r.battles, r.deaths]);
   const paintHero = (rows = hs) => fillTable($tblHeroStats, rows, [0,1,2,3].map(i => r => r[i]));
   paintHero(hs);
   attachSortable(document.querySelector('#tblHeroStats'), () => hs, paintHero, ['text','percent','number','number']);
-  if ($btnSortHeroByName) $btnSortHeroByName.onclick = () => { hs.sort((a,b)=> String(a[0]).localeCompare(String(b[0])) ); paintHero(); };
-  if ($btnSortHeroByWR)   $btnSortHeroByWR.onclick   = () => { hs.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2])); paintHero(); };
 
-  // 2) Enemy loss rate
+  // Enemy loss rate
   let enemy = (stats?.enemyLossrate || []).map(r => [r.enemyHero, (r.lossRate*100).toFixed(1)+'%', r.battles]);
   enemy.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2]));
   const paintEnemy = (rows = enemy) => fillTable($tblEnemy, rows, [0,1,2].map(i => r=>r[i]));
   paintEnemy(enemy);
   attachSortable(document.querySelector('#tblEnemy'), () => enemy, paintEnemy, ['text','percent','number']);
 
-  // 3) Matchups
+  // Matchups
   let mus = (stats?.matchups || []).map(r => [r.team, (r.wr*100).toFixed(1)+'%', r.battles]);
   mus.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2]));
   const paintMu = (rows = mus) => fillTable($tblMatchups, rows, [0,1,2].map(i => r=>r[i]));
@@ -262,26 +240,17 @@ async function loadProfileStats(player) {
   try {
     const res = await fetch(url);
     const js  = await res.json();
-    if (!js.ok) {
-      console.error('profile error:', js);
-      $err.textContent = `Profile error: ${js.error || 'unknown'}`;
-      $err.classList.remove('hidden');
-      return null;
-    }
+    if (!js.ok) { console.error('profile error:', js); return null; }
     return js.stats;
   } catch (e) {
     console.error('profile fetch failed', e);
-    $err.textContent = `Profile fetch failed: ${e.message}`;
-    $err.classList.remove('hidden');
     return null;
   }
 }
 
 async function load() {
   try {
-    $err.classList.add('hidden');
-    $err.textContent = '';
-
+    $err.classList.add('hidden'); $err.textContent = '';
     const url = endpoint(SHEET_ID, RANGE_A1) + `&t=${Date.now()}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -294,10 +263,8 @@ async function load() {
     window._guildRows = rows;
     $last.textContent = `Loaded at ${new Date().toLocaleString()}`;
 
-    const gs = extractGuildStats(values);
-    renderGuildStats(gs);
+    renderGuildStats(extractGuildStats(values));
 
-    // ?p=Name
     const pre = new URLSearchParams(location.search).get('p');
     if (pre) {
       $sel.value = pre;

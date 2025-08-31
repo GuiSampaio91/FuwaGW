@@ -115,14 +115,18 @@ function payloadFromForm() {
       const id = (s) => $(`A${attack}R${round}_${s}`);
       rounds.push({
         attack, round,
-        win: id('win').querySelector('input').checked,
+        //win: id('win').querySelector('input').checked,
+        win: id('win').checked,
 
         myHero1: id('my1').value.trim(),
-        myHero1Died: id('my1Died').querySelector('input').checked,
+        //myHero1Died: id('my1Died').querySelector('input').checked,
+        myHero1Died: id('my1Died').checked,
         myHero2: id('my2').value.trim(),
-        myHero2Died: id('my2Died').querySelector('input').checked,
+        //myHero2Died: id('my2Died').querySelector('input').checked,
+        myHero2Died: id('my2Died').checked,
         myHero3: id('my3').value.trim(),
-        myHero3Died: id('my3Died').querySelector('input').checked,
+        //myHero3Died: id('my3Died').querySelector('input').checked,
+        myHero3Died: id('my3Died').checked,
 
         enemyHero1: id('e1').value.trim(),
         enemyHero2: id('e2').value.trim(),

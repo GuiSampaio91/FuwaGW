@@ -1,0 +1,49 @@
+---
+layout: default
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>FuwaFuwa — Add GW Record</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="../styles.css"/>
+  <script type="module" src="./add.js?v={{ site.github.build_revision }}"></script>
+</head>
+<body class="page--add">
+  <div class="container">
+    <h1>Add Guild War Record</h1>
+
+    <form id="gw-form">
+      <div class="row">
+        <label>Player</label>
+        <input id="player" name="player" required readonly />
+      </div>
+
+      <div class="row">
+        <label>Passcode</label>
+        <input id="passcode" name="passcode" type="password" autocomplete="current-password" required />
+      </div>
+
+      <div class="row">
+        <label>War ID / Date (optional)</label>
+        <input id="warId" name="warId" placeholder="2025-08-31 vs XYZ"/>
+      </div>
+
+      <div id="rounds"></div>
+
+      <datalist id="heroes"></datalist>
+
+      <div class="row">
+        <label>Notes</label>
+        <textarea id="notes" rows="3" maxlength="500" placeholder="optional"></textarea>
+      </div>
+
+      <div class="row actions">
+        <button type="submit">Submit</button>
+        <span id="status"></span>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

@@ -295,14 +295,12 @@ function renderGuildStats(gs, mvp, agg) {
   const v1 = toPercent(gs?.value1);
   const v2 = toPercent(gs?.value2);
 
-  const mvpHtml = mvp
-    ? `<div class="stat">
-         <div class="k">MVP</div>
-         <div class="v">${escHTML(mvp.name)}</div>
-         <div class="k">W/R · Miss · Wins</div>
-         <div class="v">${toPercent(mvp.wr)} · ${toPercent(mvp.mr)} · ${mvp.wins}</div>
-       </div>`
-    : `<div class="stat"><div class="k">MVP</div><div class="v">–</div></div>`;
+const mvpHtml = mvp
+  ? `<div class="stat">
+       <div class="k">MVP</div>
+       <div class="v">${escHTML(mvp.name)}</div>
+     </div>`
+  : `<div class="stat"><div class="k">MVP</div><div class="v">–</div></div>`;
 
   const usedHtml = agg?.mostUsedHero
     ? `<div class="stat">

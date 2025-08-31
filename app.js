@@ -15,6 +15,7 @@ const $addBtn     = document.querySelector('#addBtn');
 const $tblHeroStats = document.querySelector('#tblHeroStats tbody');
 const $tblEnemy     = document.querySelector('#tblEnemy tbody');
 const $tblMatchups  = document.querySelector('#tblMatchups tbody');
+// (os botões antigos podem ficar, mas não são mais necessários)
 const $btnSortHeroByName = document.querySelector('#sortHeroByName');
 const $btnSortHeroByWR   = document.querySelector('#sortHeroByWR');
 
@@ -149,7 +150,7 @@ function renderStats(row) {
   `;
 }
 
-// === NEW: Insights ===
+// === Insights helpers ===
 function fmtPct(x) { return (x*100).toFixed(1) + '%'; }
 function fillTable(tbody, rows, cols) {
   tbody.innerHTML = '';
@@ -174,44 +175,88 @@ function fillTable(tbody, rows, cols) {
   });
 }
 
-async function loadProfileStats(player) {
-  if (!APPS_SCRIPT || !APPS_SCRIPT.BASE_URL) return null;
-  const url = `${APPS_SCRIPT.BASE_URL}?route=profile&player=${encodeURIComponent(player)}`;
-  const res = await fetch(url);
-  const js  = await res.json();
-  if (!js.ok) return null;
-  return js.stats;
+// === Sort infra (headers clicáveis) ===
+function parsePercentCell(s) {
+  if (s == null || s === "") return NaN;
+  if (typeof s === "string" && s.includes("%")) return parseFloat(s.replace("%","").trim());
+  const n = Number(s);
+  if (!isFinite(n)) return NaN;
+  return n > 1 ? n : n * 100;
+}
+function cmpText(a,b){ return String(a).localeCompare(String(b)); }
+function cmpNum(a,b){ return (Number(a)||0) - (Number(b)||0); }
+function cmpPct(a,b){ return parsePercentCell(a) - parsePercentCell(b); }
+
+/**
+ * tableEl: <table> (com <thead><th>…</th></thead>)
+ * getRows(): retorna a matriz atual (Array<Array>)
+ * paint(rows): redesenha usando a matriz
+ * types: ['text'|'number'|'percent', ...]
+ */
+function attachSortable(tableEl, getRows, paint, types){
+  const ths = tableEl.querySelectorAll('thead th');
+  ths.forEach((th, idx) => {
+    const type = th.dataset.type || types[idx] || 'text';
+    th.style.cursor = 'pointer';
+    let dir = 'desc';
+    th.addEventListener('click', () => {
+      ths.forEach(h => h.removeAttribute('aria-sort'));
+      dir = (th.getAttribute('aria-sort') === 'ascending') ? 'descending' : 'ascending';
+      th.setAttribute('aria-sort', dir);
+
+      const rows = getRows();
+      const comp = (type === 'number') ? cmpNum : (type === 'percent') ? cmpPct : cmpText;
+      rows.sort((a,b) => {
+        const av = a[idx], bv = b[idx];
+        const r = comp(av, bv);
+        return dir === 'ascending' ? r : -r;
+      });
+      paint(rows);
+    });
+  });
 }
 
+// === Render insights (3 tabelas com sort por header) ===
 function renderInsights(stats) {
-  // Heroes Stats
-  let hs = (stats?.heroStats || []).slice();
-  const paintHero = () => fillTable($tblHeroStats, hs, [
-    r => r.hero,
-    r => fmtPct(r.wr),
-    r => r.battles,
-    r => r.deaths
-  ]);
-  if ($btnSortHeroByName) $btnSortHeroByName.onclick = () => { hs.sort((a,b)=>a.hero.localeCompare(b.hero)); paintHero(); };
-  if ($btnSortHeroByWR)   $btnSortHeroByWR.onclick   = () => { hs.sort((a,b)=> b.wr - a.wr || b.battles - a.battles); paintHero(); };
-  paintHero();
+  // 1) Heroes Stats → matriz [Hero, W/R, Battles, Deaths]
+  let hs = (stats?.heroStats || []).map(r => [r.hero, (r.wr*100).toFixed(1)+'%', r.battles, r.deaths]);
+  const paintHero = (rows = hs) => fillTable($tblHeroStats, rows, [0,1,2,3].map(i => r => r[i]));
+  paintHero(hs);
+  attachSortable(
+    document.querySelector('#tblHeroStats'),
+    () => hs,
+    paintHero,
+    ['text','percent','number','number']
+  );
+  // compat: ainda permite os botões antigos, se existirem
+  if ($btnSortHeroByName) $btnSortHeroByName.onclick = () => { hs.sort((a,b)=> String(a[0]).localeCompare(String(b[0])) ); paintHero(); };
+  if ($btnSortHeroByWR)   $btnSortHeroByWR.onclick   = () => { hs.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2])); paintHero(); };
 
-  // Enemy loss rate (already filtered to >0 losses server-side)
-  const enemy = (stats?.enemyLossrate || []).slice().sort((a,b)=> b.lossRate - a.lossRate || b.battles - a.battles);
-  fillTable($tblEnemy, enemy, [
-    r => r.enemyHero,
-    r => fmtPct(r.lossRate),
-    r => r.battles
-  ]);
+  // 2) Enemy loss rate → matriz [Enemy Hero, Loss Rate, Battles]
+  let enemy = (stats?.enemyLossrate || []).map(r => [r.enemyHero, (r.lossRate*100).toFixed(1)+'%', r.battles]);
+  enemy.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2]));
+  const paintEnemy = (rows = enemy) => fillTable($tblEnemy, rows, [0,1,2].map(i => r=>r[i]));
+  paintEnemy(enemy);
+  attachSortable(
+    document.querySelector('#tblEnemy'),
+    () => enemy,
+    paintEnemy,
+    ['text','percent','number']
+  );
 
-  // Matchups (team of 3 enemy heroes)
-  const mus = (stats?.matchups || []).slice().sort((a,b)=> b.wr - a.wr || b.battles - a.battles);
-  fillTable($tblMatchups, mus, [
-    r => r.team,
-    r => fmtPct(r.wr),
-    r => r.battles
-  ]);
+  // 3) Matchups → matriz [Team, W/R, Battles]
+  let mus = (stats?.matchups || []).map(r => [r.team, (r.wr*100).toFixed(1)+'%', r.battles]);
+  mus.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2]));
+  const paintMu = (rows = mus) => fillTable($tblMatchups, rows, [0,1,2].map(i => r=>r[i]));
+  paintMu(mus);
+  attachSortable(
+    document.querySelector('#tblMatchups'),
+    () => mus,
+    paintMu,
+    ['text','percent','number']
+  );
 }
+
 function renderGuildStats(gs) {
   if (!gs || (gs.value1 == null && gs.value2 == null)) {
     $guildTitle.textContent = "Guild Stats";
@@ -265,11 +310,9 @@ async function load() {
       $sel.value = pre;
       const row = rows.find(r => (r["Player"] || "").toString().trim() === pre);
       renderStats(row || null);
-      // Add button
       if (row) {
         $addBtn.href = `add.html?p=${encodeURIComponent(pre)}`;
         $addBtn.hidden = false;
-        // Insights
         const stats = await loadProfileStats(pre);
         renderInsights(stats || {});
       }
@@ -298,7 +341,6 @@ $sel.addEventListener('change', async () => {
   }
 
   renderStats(row);
-  // Add button points to add.html with prefilled player
   $addBtn.href = `add.html?p=${encodeURIComponent(name)}`;
   $addBtn.hidden = false;
 

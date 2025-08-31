@@ -162,6 +162,16 @@ function parsePercentCell(s) {
 function attachSortable(tableEl, getRows, paint, types){
   const ths = tableEl.querySelectorAll('thead th');
 
+  // Limpa bindings antigos (se existirem) e estado visual
+  ths.forEach(th => {
+    if (th._sortHandler) {
+      th.removeEventListener('click', th._sortHandler);
+    }
+    th._sortHandler = null;
+    th.dataset.dir = '';
+    th.removeAttribute('aria-sort');
+  });
+
   const cmpText = (a,b) => String(a).localeCompare(String(b));
   const cmpNum  = (a,b) => (Number(a)||0) - (Number(b)||0);
   const cmpPct  = (a,b) => {
@@ -172,18 +182,35 @@ function attachSortable(tableEl, getRows, paint, types){
     return av - bv;
   };
 
+  // Captura a ordem base para permitir "3º clique" (limpar sort)
+  const baseOrder = getRows().slice();
+
   ths.forEach((th, idx) => {
     const type = th.dataset.type || types[idx] || 'text';
+    const comp = (type === 'number') ? cmpNum : (type === 'percent') ? cmpPct : cmpText;
     th.style.cursor = 'pointer';
-    th.addEventListener('click', () => {
+
+    th._sortHandler = () => {
       const prev = th.dataset.dir || '';
-      const dir  = (prev === 'asc') ? 'desc' : 'asc';
+      // alternância de 3 estados: '' -> asc -> desc -> ''
+      const dir = prev === '' ? 'asc' : (prev === 'asc' ? 'desc' : '');
+
+      // limpa estado dos outros th
       ths.forEach(h => { if (h!==th) { h.dataset.dir=''; h.removeAttribute('aria-sort'); }});
-      th.dataset.dir = dir;
-      th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
 
       const rows = getRows();
-      const comp = (type === 'number') ? cmpNum : (type === 'percent') ? cmpPct : cmpText;
+      if (dir === '') {
+        // restaura ordem base
+        rows.length = 0;
+        rows.push(...baseOrder);
+        th.dataset.dir = '';
+        th.removeAttribute('aria-sort');
+        paint(rows);
+        return;
+      }
+
+      th.dataset.dir = dir;
+      th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
 
       rows.sort((a,b) => {
         const r = comp(a[idx], b[idx]);
@@ -192,9 +219,12 @@ function attachSortable(tableEl, getRows, paint, types){
       });
 
       paint(rows);
-    });
+    };
+
+    th.addEventListener('click', th._sortHandler);
   });
 }
+
 
 // === render insights (3 tabelas) ===
 function renderInsights(stats) {

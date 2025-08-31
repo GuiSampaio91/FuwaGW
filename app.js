@@ -15,9 +15,6 @@ const $addBtn     = document.querySelector('#addBtn');
 const $tblHeroStats = document.querySelector('#tblHeroStats tbody');
 const $tblEnemy     = document.querySelector('#tblEnemy tbody');
 const $tblMatchups  = document.querySelector('#tblMatchups tbody');
-// (botões antigos – opcionais)
-const $btnSortHeroByName = document.querySelector('#sortHeroByName');
-const $btnSortHeroByWR   = document.querySelector('#sortHeroByWR');
 
 const endpoint = (sheetId, rangeA1) =>
   `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(rangeA1)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&key=${API_KEY}`;

@@ -15,14 +15,14 @@ const $addBtn     = document.querySelector('#addBtn');
 const $tblHeroStats = document.querySelector('#tblHeroStats tbody');
 const $tblEnemy     = document.querySelector('#tblEnemy tbody');
 const $tblMatchups  = document.querySelector('#tblMatchups tbody');
-// (os botões antigos podem ficar, mas não são mais necessários)
+// (botões antigos – opcionais)
 const $btnSortHeroByName = document.querySelector('#sortHeroByName');
 const $btnSortHeroByWR   = document.querySelector('#sortHeroByWR');
 
 const endpoint = (sheetId, rangeA1) =>
   `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(rangeA1)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&key=${API_KEY}`;
 
-// Percent helper: accepts 0.764, 76.4, or "76.4%"
+// helpers
 function toPercent(x, digits = 1) {
   if (x == null || x === "") return "–";
   if (typeof x === "string" && x.includes("%")) return x.trim();
@@ -36,12 +36,8 @@ function toNum(x) {
   const n = Number(x);
   return isFinite(n) ? n : 0;
 }
-function escHTML(s) {
-  return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-}
-function escAttr(s) {
-  return String(s).replace(/"/g, '&quot;');
-}
+function escHTML(s) { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s) { return String(s).replace(/"/g, '&quot;'); }
 function pick(obj, ...keys) {
   for (const k of keys) if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] !== undefined) return obj[k];
   return undefined;
@@ -61,11 +57,9 @@ function parseRows(values) {
   return { headers, rows, values };
 }
 
-// Robustly locate the K/L mini-table
+// === Guild mini-table (robusto) ===
 function extractGuildStats(values) {
   if (!Array.isArray(values) || !values.length) return null;
-
-  // 1) Try to find the title "Guild Stats" anywhere
   let col = -1, row = -1;
   outer:
   for (let r = 0; r < values.length; r++) {
@@ -83,8 +77,6 @@ function extractGuildStats(values) {
     const value2 = values[row + 2]?.[col + 1];
     return { title, label1, value1, label2, value2 };
   }
-
-  // 2) Fallback: find the labels themselves anywhere
   let r1=-1,c1=-1,r2=-1,c2=-1;
   for (let r = 0; r < values.length; r++) {
     const rowArr = values[r] || [];
@@ -102,8 +94,6 @@ function extractGuildStats(values) {
     const value2 = r2 !== -1 ? values[r2]?.[c2 + 1] : undefined;
     return { title, label1, value1, label2, value2 };
   }
-
-  // 3) Not found
   return null;
 }
 
@@ -111,7 +101,6 @@ function buildPlayerOptions(rows) {
   const names = Array.from(new Set(rows.map(r => (r["Player"] || "").toString().trim())))
     .filter(Boolean)
     .sort((a,b)=>a.localeCompare(b));
-
   $sel.innerHTML = `<option value="">Select...</option>` +
     names.map(n => `<option value="${escAttr(n)}">${escHTML(n)}</option>`).join("");
 }
@@ -127,10 +116,8 @@ function renderStats(row) {
   const wr     = row["W/R"];
   const atks   = toNum(row["Total Atks"]);
   const mr     = row["Miss Rate"];
-
   const joinedRaw = pick(row, "Joined", "Season Join Date");
   const joined    = joinedRaw ?? "–";
-
   const dead = toNum(pick(row, "D/T Hits", "DeadTower Total")) || 0;
 
   const goodWR = Number(wr) >= 0.85;
@@ -150,7 +137,7 @@ function renderStats(row) {
   `;
 }
 
-// === Insights helpers ===
+// === table paint helpers ===
 function fmtPct(x) { return (x*100).toFixed(1) + '%'; }
 function fillTable(tbody, rows, cols) {
   tbody.innerHTML = '';
@@ -175,7 +162,7 @@ function fillTable(tbody, rows, cols) {
   });
 }
 
-// === Sort infra (headers clicáveis) ===
+// === sort infra ===
 function parsePercentCell(s) {
   if (s == null || s === "") return NaN;
   if (typeof s === "string" && s.includes("%")) return parseFloat(s.replace("%","").trim());
@@ -187,21 +174,18 @@ function cmpText(a,b){ return String(a).localeCompare(String(b)); }
 function cmpNum(a,b){ return (Number(a)||0) - (Number(b)||0); }
 function cmpPct(a,b){ return parsePercentCell(a) - parsePercentCell(b); }
 
-/**
- * tableEl: <table> (com <thead><th>…</th></thead>)
- * getRows(): retorna a matriz atual (Array<Array>)
- * paint(rows): redesenha usando a matriz
- * types: ['text'|'number'|'percent', ...]
- */
+/** headers clicáveis com toggle ↑/↓ */
 function attachSortable(tableEl, getRows, paint, types){
   const ths = tableEl.querySelectorAll('thead th');
   ths.forEach((th, idx) => {
     const type = th.dataset.type || types[idx] || 'text';
     th.style.cursor = 'pointer';
-    let dir = 'desc';
     th.addEventListener('click', () => {
+      // toggle
+      const now = th.getAttribute('aria-sort');
+      const dir = (now === 'ascending') ? 'descending' : 'ascending';
+      // limpa outros
       ths.forEach(h => h.removeAttribute('aria-sort'));
-      dir = (th.getAttribute('aria-sort') === 'ascending') ? 'descending' : 'ascending';
       th.setAttribute('aria-sort', dir);
 
       const rows = getRows();
@@ -216,71 +200,65 @@ function attachSortable(tableEl, getRows, paint, types){
   });
 }
 
-// === Render insights (3 tabelas com sort por header) ===
+// === insights render ===
 function renderInsights(stats) {
-  // 1) Heroes Stats → matriz [Hero, W/R, Battles, Deaths]
+  // 1) Hero Stats
   let hs = (stats?.heroStats || []).map(r => [r.hero, (r.wr*100).toFixed(1)+'%', r.battles, r.deaths]);
   const paintHero = (rows = hs) => fillTable($tblHeroStats, rows, [0,1,2,3].map(i => r => r[i]));
   paintHero(hs);
-  attachSortable(
-    document.querySelector('#tblHeroStats'),
-    () => hs,
-    paintHero,
-    ['text','percent','number','number']
-  );
-  // compat: ainda permite os botões antigos, se existirem
+  attachSortable(document.querySelector('#tblHeroStats'), () => hs, paintHero, ['text','percent','number','number']);
   if ($btnSortHeroByName) $btnSortHeroByName.onclick = () => { hs.sort((a,b)=> String(a[0]).localeCompare(String(b[0])) ); paintHero(); };
   if ($btnSortHeroByWR)   $btnSortHeroByWR.onclick   = () => { hs.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2])); paintHero(); };
 
-  // 2) Enemy loss rate → matriz [Enemy Hero, Loss Rate, Battles]
+  // 2) Enemy loss rate
   let enemy = (stats?.enemyLossrate || []).map(r => [r.enemyHero, (r.lossRate*100).toFixed(1)+'%', r.battles]);
   enemy.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2]));
   const paintEnemy = (rows = enemy) => fillTable($tblEnemy, rows, [0,1,2].map(i => r=>r[i]));
   paintEnemy(enemy);
-  attachSortable(
-    document.querySelector('#tblEnemy'),
-    () => enemy,
-    paintEnemy,
-    ['text','percent','number']
-  );
+  attachSortable(document.querySelector('#tblEnemy'), () => enemy, paintEnemy, ['text','percent','number']);
 
-  // 3) Matchups → matriz [Team, W/R, Battles]
+  // 3) Matchups
   let mus = (stats?.matchups || []).map(r => [r.team, (r.wr*100).toFixed(1)+'%', r.battles]);
   mus.sort((a,b)=> parsePercentCell(b[1]) - parsePercentCell(a[1]) || (b[2]-a[2]));
   const paintMu = (rows = mus) => fillTable($tblMatchups, rows, [0,1,2].map(i => r=>r[i]));
   paintMu(mus);
-  attachSortable(
-    document.querySelector('#tblMatchups'),
-    () => mus,
-    paintMu,
-    ['text','percent','number']
-  );
+  attachSortable(document.querySelector('#tblMatchups'), () => mus, paintMu, ['text','percent','number']);
 }
 
 function renderGuildStats(gs) {
   if (!gs || (gs.value1 == null && gs.value2 == null)) {
     $guildTitle.textContent = "Guild Stats";
-    $guildStats.innerHTML = `
-      <div class="placeholder">Guild stats not found in the selected range.</div>
-    `;
+    $guildStats.innerHTML = `<div class="placeholder">Guild stats not found in the selected range.</div>`;
     return;
   }
-
   $guildTitle.textContent = String(gs.title || "Guild Stats");
-
   const v1 = toPercent(gs.value1);
   const v2 = toPercent(gs.value2);
-
   $guildStats.innerHTML = `
-    <div class="stat">
-      <div class="k">${escHTML(gs.label1 || "Avg. W/R")}</div>
-      <div class="v">${v1}</div>
-    </div>
-    <div class="stat">
-      <div class="k">${escHTML(gs.label2 || "Avg. Miss Rate")}</div>
-      <div class="v">${v2}</div>
-    </div>
+    <div class="stat"><div class="k">${escHTML(gs.label1 || "Avg. W/R")}</div><div class="v">${v1}</div></div>
+    <div class="stat"><div class="k">${escHTML(gs.label2 || "Avg. Miss Rate")}</div><div class="v">${v2}</div></div>
   `;
+}
+
+async function loadProfileStats(player) {
+  if (!APPS_SCRIPT || !APPS_SCRIPT.BASE_URL) return null;
+  const url = `${APPS_SCRIPT.BASE_URL}?route=profile&player=${encodeURIComponent(player)}`;
+  try {
+    const res = await fetch(url);
+    const js  = await res.json();
+    if (!js.ok) {
+      console.error('profile error:', js);
+      $err.textContent = `Profile error: ${js.error || 'unknown'}`;
+      $err.classList.remove('hidden');
+      return null;
+    }
+    return js.stats;
+  } catch (e) {
+    console.error('profile fetch failed', e);
+    $err.textContent = `Profile fetch failed: ${e.message}`;
+    $err.classList.remove('hidden');
+    return null;
+  }
 }
 
 async function load() {
@@ -300,11 +278,10 @@ async function load() {
     window._guildRows = rows;
     $last.textContent = `Loaded at ${new Date().toLocaleString()}`;
 
-    // Render guild panel from K/L block (robust search)
     const gs = extractGuildStats(values);
     renderGuildStats(gs);
 
-    // Optional preselect ?p=Name
+    // ?p=Name
     const pre = new URLSearchParams(location.search).get('p');
     if (pre) {
       $sel.value = pre;

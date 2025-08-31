@@ -6,6 +6,6 @@ export const SHEET_NAME = "Guild Wars";
 export const RANGE_A1 = `'${SHEET_NAME}'!A1:Q1000`;
 
 export const APPS_SCRIPT = {
-  BASE_URL: 'https://script.google.com/macros/s/AKfycbzdYVJ15xQ_PsPatIDce8aCjh7Hijo-Chm32a4bs5PVkc7bGpy8k5YhL3G2aneK8URgxQ/exec',
+  BASE_URL: 'https://script.google.com/macros/s/AKfycbybngcQ0ixk5QSsZJRs7nRKCmym9pVP55fuqVkWp4LEhIn6TO3NYMjNSHOHazHyRWQKfQ/exec',
   CLIENT_TOKEN: 'fwf-client-v1'
 };

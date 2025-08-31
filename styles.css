@@ -99,3 +99,67 @@ label { font-size: 13px; color: var(--muted); display: block; margin: 2px 0 6px;
 .back-link:hover { text-decoration:underline; }
 .page-title { margin:0 0 6px; font-size:24px; font-weight:700; }
 
+/* === Data tables (insights) === */
+.data-table {
+  width: 100%;
+  border-collapse: separate;            /* permite row-gap via border-spacing */
+  border-spacing: 0 8px;                /* “cards” com espaço vertical */
+  table-layout: auto;                   /* deixe o browser ajustar largura */
+}
+
+.data-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+  text-align: left;
+  padding: 10px 14px;
+}
+
+.data-table tbody tr {
+  background: #0c1218;
+  border: 1px solid var(--border);
+  border-radius: 10px;                  /* funciona via overflow */
+  overflow: hidden;
+}
+
+.data-table tbody td {
+  padding: 12px 14px;
+  vertical-align: middle;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.data-table tbody tr:hover {            /* highlight na linha */
+  background: #0d1720;
+  border-color: #2a3a48;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2),
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+  white-space: nowrap;                  /* números compactos */
+  text-align: right;                    /* alinhar números à direita */
+}
+
+/* Coluna de texto (nomes/teams) com quebra amigável */
+#tblHeroStats td:first-child,
+#tblEnemy td:first-child,
+#tblMatchups td:first-child {
+  white-space: normal;                  /* pode quebrar */
+  word-break: break-word;               /* força quebra em nomes enormes */
+  text-align: left;
+}
+
+/* Ajustes finos no Matchups: deixa a 1ª coluna “elástica” */
+#tblMatchups { table-layout: auto; }
+#tblMatchups td:first-child { max-width: 0; }  /* permite ocupar o que sobrar */
+
+/* Responsivo: em telas estreitas, garanta legibilidade */
+@media (max-width: 700px) {
+  .data-table thead th { font-size: 12px; padding: 8px 10px; }
+  .data-table tbody td  { font-size: 13px; padding: 10px 10px; }
+}
+

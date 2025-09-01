@@ -441,6 +441,5 @@ $sel.addEventListener('change', async () => {
     hideBusy();
   }
 });
-);
 
 load();

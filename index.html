@@ -117,7 +117,13 @@
   <footer class="container footer">
     <small>Live data from Google Sheets • © FuwaFuwa</small>
   </footer>
-
+    <!-- Blocking loader -->
+  <div id="busy" class="busy hidden" role="alertdialog" aria-modal="true" aria-busy="true" aria-live="assertive">
+    <div class="dlg">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="msg">Loading data…</div>
+    </div>
+  </div>
   <script type="module" src="app.js?v={{ site.github.build_revision | slice:0,8 }}"></script>
 </body>
 </html>

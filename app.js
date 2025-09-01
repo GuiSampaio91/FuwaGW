@@ -16,6 +16,27 @@ const $tblHeroStats = document.querySelector('#tblHeroStats tbody');
 const $tblEnemy     = document.querySelector('#tblEnemy tbody');
 const $tblMatchups  = document.querySelector('#tblMatchups tbody');
 
+const $busy = document.querySelector('#busy');
+
+function showBusy(msg = 'Loading…') {
+  if ($busy) {
+    const m = $busy.querySelector('.msg');
+    if (m) m.textContent = msg;
+    $busy.classList.remove('hidden');
+  }
+  // Bloqueia scroll e interações básicas
+  document.body.style.overflow = 'hidden';
+  if ($sel) $sel.disabled = true;
+  if ($addBtn) $addBtn.setAttribute('aria-disabled','true');
+}
+
+function hideBusy() {
+  if ($busy) $busy.classList.add('hidden');
+  document.body.style.overflow = '';
+  if ($sel) $sel.disabled = false;
+  if ($addBtn) $addBtn.removeAttribute('aria-disabled');
+}
+
 const endpoint = (sheetId, rangeA1) =>
   `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(rangeA1)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&key=${API_KEY}`;
 
@@ -344,8 +365,11 @@ async function loadProfileStats(player) {
 }
 
 async function load() {
+  showBusy('Loading data…');
   try {
-    $err.classList.add('hidden'); $err.textContent = '';
+    $err.classList.add('hidden'); 
+    $err.textContent = '';
+
     const url = endpoint(SHEET_ID, RANGE_A1) + `&t=${Date.now()}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -358,11 +382,13 @@ async function load() {
     window._guildRows = rows;
     $last.textContent = `Loaded at ${new Date().toLocaleString()}`;
 
-    const guildCells = extractGuildStats(values);          // já existia
-    const mvp = computeMVP(rows);                          // NOVO
-    const agg = await loadGuildAggregates();               // NOVO
-    renderGuildStats(guildCells, mvp, agg);                // troque a chamada antiga
+    // Guild mini-cards + agregados
+    const guildCells = extractGuildStats(values);
+    const mvp = computeMVP(rows);
+    const agg = await loadGuildAggregates();
+    renderGuildStats(guildCells, mvp, agg);
 
+    // Pré-selecionado via ?p=Nome
     const pre = new URLSearchParams(location.search).get('p');
     if (pre) {
       $sel.value = pre;
@@ -375,6 +401,7 @@ async function load() {
         renderInsights(stats || {});
       }
     } else {
+      // estado “vazio” inicial
       renderStats(null);
       $addBtn.hidden = true;
       renderInsights({ heroStats: [], enemyLossrate: [], matchups: [] });
@@ -383,27 +410,37 @@ async function load() {
     console.error(e);
     $err.textContent = `Failed to load data: ${e.message}`;
     $err.classList.remove('hidden');
+  } finally {
+    hideBusy();
   }
 }
 
 $sel.addEventListener('change', async () => {
-  const name = $sel.value;
-  const rows = window._guildRows || [];
-  const row = rows.find(r => (r["Player"] || "").toString().trim() === name);
+  showBusy('Loading player stats…');
+  try {
+    const name = $sel.value;
+    const rows = window._guildRows || [];
+    const row = rows.find(r => (r["Player"] || "").toString().trim() === name);
 
-  if (!name || !row) {
-    renderStats(null);
-    $addBtn.hidden = true;
-    renderInsights({ heroStats: [], enemyLossrate: [], matchups: [] });
-    return;
+    if (!name || !row) {
+      renderStats(null);
+      $addBtn.hidden = true;
+      renderInsights({ heroStats: [], enemyLossrate: [], matchups: [] });
+      return;
+    }
+
+    // pinta card “Stats” imediatamente com dados tabulares
+    renderStats(row);
+    $addBtn.href = `add.html?p=${encodeURIComponent(name)}`;
+    $addBtn.hidden = false;
+
+    // busca perfil detalhado (3 tabelas)
+    const stats = await loadProfileStats(name);
+    renderInsights(stats || {});
+  } finally {
+    hideBusy();
   }
-
-  renderStats(row);
-  $addBtn.href = `add.html?p=${encodeURIComponent(name)}`;
-  $addBtn.hidden = false;
-
-  const stats = await loadProfileStats(name);
-  renderInsights(stats || {});
 });
+);
 
 load();

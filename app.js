@@ -351,18 +351,21 @@ const mvpHtml = mvp
   `;
 }
 
+// === Player Insights (mini-cards) ===
 function renderPersonalStats(stats) {
-  if (!$personal) return;
+  const $ps = document.querySelector('#personalStats');
+  if (!$ps) return;
 
-  if (!stats || (!stats.heroStats && !stats.enemyLossrate)) {
-    $personal.innerHTML = '<div class="placeholder">Pick a player to see data.</div>';
+  if (!stats) {
+    $ps.innerHTML = '<div class="placeholder">Pick a player to see data.</div>';
     return;
   }
 
   const heroStats = Array.isArray(stats.heroStats) ? stats.heroStats.slice() : [];
   const enemyLR   = Array.isArray(stats.enemyLossrate) ? stats.enemyLossrate.slice() : [];
+  const matchups  = Array.isArray(stats.matchups) ? stats.matchups.slice() : [];
 
-  // === MVP ===
+  // ===== MVP =====
   // maior W/R → maior nº de partidas → menos mortes → ordem alfabética
   const mvp = heroStats
     .slice()
@@ -373,10 +376,10 @@ function renderPersonalStats(stats) {
       a.hero.localeCompare(b.hero)
     )[0];
 
-  // === LVP ===
-  // pior W/R (apenas se houver pelo menos 1 derrota) → maior nº partidas → mais mortes → ordem alfabética
+  // ===== LVP =====
+  // pior W/R (só se houver pelo menos 1 derrota) → maior nº partidas → mais mortes → ordem alfabética
   const lvp = heroStats
-    .filter(h => (h.losses || (h.battles - (h.wins||0))) > 0)
+    .filter(h => (h.losses ?? (h.battles - (h.wins || 0))) > 0)
     .sort((a,b) =>
       (a.wr - b.wr) ||
       (b.battles - a.battles) ||
@@ -384,17 +387,18 @@ function renderPersonalStats(stats) {
       a.hero.localeCompare(b.hero)
     )[0];
 
-  // === Nemesis (inimigo que mais te venceu) ===
-  // mais derrotas causadas → mais batalhas → ordem alfabética
+  // ===== Nemesis =====
+  // inimigo que MAIS te venceu; só considera yourLosses > 0
   const nemesis = enemyLR
-    .slice()
+    .filter(e => (e.yourLosses || 0) > 0)
     .sort((a,b) =>
       ((b.yourLosses||0) - (a.yourLosses||0)) ||
       ((b.battles||0) - (a.battles||0)) ||
       (a.enemyHero||'').localeCompare(b.enemyHero||'')
     )[0];
 
-  // === Fav. Targets (top 3 inimigos mais atacados) ===
+  // ===== Fav. Targets =====
+  // top 3 inimigos mais atacados (maior nº de batalhas)
   const favTargets = enemyLR
     .slice()
     .sort((a,b) =>
@@ -403,6 +407,53 @@ function renderPersonalStats(stats) {
     )
     .slice(0, 3)
     .map(x => x.enemyHero);
+
+  // ===== Survivor =====
+  // menor taxa de morte (deaths/battles); crit: mais batalhas → maior W/R → ordem alfab.
+  const survivor = heroStats
+    .filter(h => (h.battles || 0) > 0)
+    .map(h => ({ ...h, dr: (h.deaths || 0) / (h.battles || 1) }))
+    .sort((a,b) =>
+      (a.dr - b.dr) ||
+      (b.battles - a.battles) ||
+      (b.wr - a.wr) ||
+      a.hero.localeCompare(b.hero)
+    )[0];
+
+  // ===== Glass Cannon =====
+  // maior taxa de morte (deaths/battles); crit: mais batalhas → menor W/R → ordem alfab.
+  const glass = heroStats
+    .filter(h => (h.battles || 0) > 0)
+    .map(h => ({ ...h, dr: (h.deaths || 0) / (h.battles || 1) }))
+    .sort((a,b) =>
+      (b.dr - a.dr) ||
+      (b.battles - a.battles) ||
+      (a.wr - b.wr) ||
+      a.hero.localeCompare(b.hero)
+    )[0];
+
+  // ===== Best/Worst Matchup =====
+  // usa times de 3 inimigos; exige mínimo de batalhas para evitar ruído
+  const MIN_MU = 2; // ajuste se quiser
+  const muEligible = matchups.filter(m => (m.battles || 0) >= MIN_MU);
+
+  const bestMu = muEligible
+    .slice()
+    .sort((a,b) =>
+      (b.wr - a.wr) ||
+      (b.battles - a.battles) ||
+      a.team.localeCompare(b.team)
+    )[0];
+
+  const worstMu = muEligible
+    .filter(m => (m.wr || 0) < 1) // só se houve ao menos 1 derrota
+    .sort((a,b) =>
+      (a.wr - b.wr) ||
+      (b.battles - a.battles) ||
+      a.team.localeCompare(b.team)
+    )[0];
+
+  const pct = x => (x == null ? '–' : (x*100).toFixed(1) + '%');
 
   // Monta os mini-cards
   const mvpHtml = `
@@ -429,7 +480,31 @@ function renderPersonalStats(stats) {
       <div class="v">${favTargets.length ? favTargets.join(', ') : '–'}</div>
     </div>`;
 
-  $personal.innerHTML = mvpHtml + lvpHtml + nemHtml + favHtml;
+  const survivorHtml = `
+    <div class="stat">
+      <div class="k">Survivor</div>
+      <div class="v">${survivor?.hero ?? '–'}</div>
+    </div>`;
+
+  const glassHtml = `
+    <div class="stat">
+      <div class="k">Glass Cannon</div>
+      <div class="v">${glass?.hero ?? '–'}</div>
+    </div>`;
+
+  const bestMuHtml = `
+    <div class="stat">
+      <div class="k">Best Matchup</div>
+      <div class="v">${bestMu ? `${bestMu.team} (${pct(bestMu.wr)})` : '–'}</div>
+    </div>`;
+
+  const worstMuHtml = `
+    <div class="stat">
+      <div class="k">Worst Matchup</div>
+      <div class="v">${worstMu ? ${'`'}${worstMu.team} (${pct(worstMu.wr)})${'`'} : '–'}</div>
+    </div>`;
+
+  $ps.innerHTML = mvpHtml + lvpHtml + nemHtml + favHtml + survivorHtml + glassHtml + bestMuHtml + worstMuHtml;
 }
 
 async function loadProfileStats(player) {

@@ -224,3 +224,31 @@ label { font-size: 13px; color: var(--muted); display: block; margin: 2px 0 6px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .busy .msg { color: var(--text); font-weight: 600; }
+
+/* === Hover help for mini-cards (Player Insights) === */
+.stat { position: relative; overflow: hidden; }
+.stat:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+
+.stat .hint {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: flex-start;
+  padding: 12px; text-align: left;
+  background: rgba(10,15,22,.92);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 12px; line-height: 1.35;
+  opacity: 0;
+  transition: opacity .18s ease;
+  pointer-events: none;              /* não bloqueia clique na célula */
+}
+
+.stat:hover .hint,
+.stat:focus-within .hint {           /* acessível via teclado */
+  opacity: 1;
+}
+
+.stat:hover .k, .stat:hover .v,
+.stat:focus-within .k, .stat:focus-within .v {
+  opacity: .15;                      /* dá o “fade” no conteúdo original */
+}

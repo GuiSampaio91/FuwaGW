@@ -10,6 +10,7 @@ const $last       = document.querySelector('#lastUpdated');
 const $guildTitle = document.querySelector('#guildTitle');
 const $guildStats = document.querySelector('#guildStats');
 const $addBtn     = document.querySelector('#addBtn');
+const $personal   = document.querySelector('#personalStats');
 
 // Insights DOM
 const $tblHeroStats = document.querySelector('#tblHeroStats tbody');
@@ -350,6 +351,87 @@ const mvpHtml = mvp
   `;
 }
 
+function renderPersonalStats(stats) {
+  if (!$personal) return;
+
+  if (!stats || (!stats.heroStats && !stats.enemyLossrate)) {
+    $personal.innerHTML = '<div class="placeholder">Pick a player to see data.</div>';
+    return;
+  }
+
+  const heroStats = Array.isArray(stats.heroStats) ? stats.heroStats.slice() : [];
+  const enemyLR   = Array.isArray(stats.enemyLossrate) ? stats.enemyLossrate.slice() : [];
+
+  // === MVP ===
+  // maior W/R → maior nº de partidas → menos mortes → ordem alfabética
+  const mvp = heroStats
+    .slice()
+    .sort((a,b) =>
+      (b.wr - a.wr) ||
+      (b.battles - a.battles) ||
+      (a.deaths - b.deaths) ||
+      a.hero.localeCompare(b.hero)
+    )[0];
+
+  // === LVP ===
+  // pior W/R (apenas se houver pelo menos 1 derrota) → maior nº partidas → mais mortes → ordem alfabética
+  const lvp = heroStats
+    .filter(h => (h.losses || (h.battles - (h.wins||0))) > 0)
+    .sort((a,b) =>
+      (a.wr - b.wr) ||
+      (b.battles - a.battles) ||
+      ((b.deaths||0) - (a.deaths||0)) ||
+      a.hero.localeCompare(b.hero)
+    )[0];
+
+  // === Nemesis (inimigo que mais te venceu) ===
+  // mais derrotas causadas → mais batalhas → ordem alfabética
+  const nemesis = enemyLR
+    .slice()
+    .sort((a,b) =>
+      ((b.yourLosses||0) - (a.yourLosses||0)) ||
+      ((b.battles||0) - (a.battles||0)) ||
+      (a.enemyHero||'').localeCompare(b.enemyHero||'')
+    )[0];
+
+  // === Fav. Targets (top 3 inimigos mais atacados) ===
+  const favTargets = enemyLR
+    .slice()
+    .sort((a,b) =>
+      ((b.battles||0) - (a.battles||0)) ||
+      (a.enemyHero||'').localeCompare(b.enemyHero||'')
+    )
+    .slice(0, 3)
+    .map(x => x.enemyHero);
+
+  // Monta os mini-cards
+  const mvpHtml = `
+    <div class="stat">
+      <div class="k">MVP</div>
+      <div class="v">${mvp?.hero ?? '–'}</div>
+    </div>`;
+
+  const lvpHtml = `
+    <div class="stat">
+      <div class="k">LVP</div>
+      <div class="v">${lvp?.hero ?? '–'}</div>
+    </div>`;
+
+  const nemHtml = `
+    <div class="stat">
+      <div class="k">Nemesis</div>
+      <div class="v">${nemesis?.enemyHero ?? '–'}</div>
+    </div>`;
+
+  const favHtml = `
+    <div class="stat">
+      <div class="k">Fav. Targets</div>
+      <div class="v">${favTargets.length ? favTargets.join(', ') : '–'}</div>
+    </div>`;
+
+  $personal.innerHTML = mvpHtml + lvpHtml + nemHtml + favHtml;
+}
+
 async function loadProfileStats(player) {
   if (!APPS_SCRIPT || !APPS_SCRIPT.BASE_URL) return null;
   const url = `${APPS_SCRIPT.BASE_URL}?route=profile&player=${encodeURIComponent(player)}`;
@@ -399,12 +481,15 @@ async function load() {
         $addBtn.hidden = false;
         const stats = await loadProfileStats(pre);
         renderInsights(stats || {});
+        renderPersonalStats(stats || {});
+
       }
     } else {
       // estado “vazio” inicial
       renderStats(null);
       $addBtn.hidden = true;
       renderInsights({ heroStats: [], enemyLossrate: [], matchups: [] });
+      renderPersonalStats(null);
     }
   } catch (e) {
     console.error(e);
@@ -426,6 +511,7 @@ $sel.addEventListener('change', async () => {
       renderStats(null);
       $addBtn.hidden = true;
       renderInsights({ heroStats: [], enemyLossrate: [], matchups: [] });
+      renderPersonalStats(null);
       return;
     }
 
@@ -437,6 +523,7 @@ $sel.addEventListener('change', async () => {
     // busca perfil detalhado (3 tabelas)
     const stats = await loadProfileStats(name);
     renderInsights(stats || {});
+    renderPersonalStats(stats || {});
   } finally {
     hideBusy();
   }

@@ -432,26 +432,37 @@ function renderPersonalStats(stats) {
       a.hero.localeCompare(b.hero)
     )[0];
 
-  // ===== Best/Worst Matchup =====
-  // usa times de 3 inimigos; exige mínimo de batalhas para evitar ruído
-  const MIN_MU = 2; // ajuste se quiser
-  const muEligible = matchups.filter(m => (m.battles || 0) >= MIN_MU);
+// ===== Best/Worst Matchup =====
+// usa times de 3 inimigos; considera batalhas >= 1
+const MIN_MU = 1;
 
-  const bestMu = muEligible
-    .slice()
-    .sort((a,b) =>
+// elegíveis pelo limiar
+let muEligible = matchups.filter(m => (m.battles || 0) >= MIN_MU);
+
+// FALLBACK: se não houver elegíveis (ex.: rounds com < 3 inimigos),
+// usa todos os matchups disponíveis
+if (!muEligible.length && matchups.length) {
+  muEligible = matchups.slice();
+}
+
+// Best = maior W/R → mais batalhas → A-Z
+const bestMu = muEligible.length
+  ? muEligible.slice().sort((a,b) =>
       (b.wr - a.wr) ||
       (b.battles - a.battles) ||
       a.team.localeCompare(b.team)
-    )[0];
+    )[0]
+  : null;
 
-  const worstMu = muEligible
-    .filter(m => (m.wr || 0) < 1) // só se houve ao menos 1 derrota
-    .sort((a,b) =>
+// Worst = menor W/R, mas só se W/R < 1 (existiu derrota) → mais batalhas → A-Z
+const worstPool = muEligible.filter(m => (m.wr || 0) < 1);
+const worstMu = worstPool.length
+  ? worstPool.slice().sort((a,b) =>
       (a.wr - b.wr) ||
       (b.battles - a.battles) ||
       a.team.localeCompare(b.team)
-    )[0];
+    )[0]
+  : null;
 
   const pct = x => (x == null ? '–' : (x*100).toFixed(1) + '%');
 

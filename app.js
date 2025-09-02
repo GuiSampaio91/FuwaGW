@@ -499,7 +499,7 @@ const worstMu = worstPool.length
 
   const glassHtml = `
     <div class="stat">
-      <div class="k">Glass Cannon</div>
+      <div class="k">Most Deaths</div>
       <div class="v">${glass?.hero ?? '–'}</div>
     </div>`;
 

@@ -492,17 +492,17 @@ function renderPersonalStats(stats) {
       <div class="v">${glass?.hero ?? '–'}</div>
     </div>`;
 
-  const bestMuHtml = `
-    <div class="stat">
-      <div class="k">Best Matchup</div>
-      <div class="v">${bestMu ? `${bestMu.team} (${pct(bestMu.wr)})` : '–'}</div>
-    </div>`;
+const bestMuHtml = `
+  <div class="stat">
+    <div class="k">Best Matchup</div>
+    <div class="v">${bestMu ? `${escHTML(bestMu.team)} (${pct(bestMu.wr)})` : '–'}</div>
+  </div>`;
 
-  const worstMuHtml = `
-    <div class="stat">
-      <div class="k">Worst Matchup</div>
-      <div class="v">${worstMu ? ${'`'}${worstMu.team} (${pct(worstMu.wr)})${'`'} : '–'}</div>
-    </div>`;
+const worstMuHtml = `
+  <div class="stat">
+    <div class="k">Worst Matchup</div>
+    <div class="v">${worstMu ? `${escHTML(worstMu.team)} (${pct(worstMu.wr)})` : '–'}</div>
+  </div>`;
 
   $ps.innerHTML = mvpHtml + lvpHtml + nemHtml + favHtml + survivorHtml + glassHtml + bestMuHtml + worstMuHtml;
 }

@@ -482,53 +482,54 @@ const worstMu = worstPool.length
 const mvpHtml = statCard(
   'MVP',
   mvp?.hero ?? '–',
-  'Maior W/R; desempate: mais batalhas → menos mortes → A–Z.'
+  'Highest W/R; tie-breakers: more battles → fewer deaths → A–Z.'
 );
 
 const lvpHtml = statCard(
   'LVP',
   lvp?.hero ?? '–',
-  'Menor W/R (precisa ≥1 derrota); desempate: mais batalhas → mais mortes → A–Z.'
+  'Lowest W/R (requires ≥1 loss); tie-breakers: more battles → more deaths → A–Z.'
 );
 
 const nemHtml = statCard(
   'Nemesis',
   nemesis?.enemyHero ?? '–',
-  'Inimigo que mais te venceu; desempate: mais batalhas → A–Z.'
+  'Enemy that defeated you the most; tie-breakers: more battles → A–Z.'
 );
 
 const favHtml = statCard(
   'Fav. Targets',
   (favTargets.length ? favTargets.join(', ') : '–'),
-  'Top 3 inimigos mais atacados (por batalhas).'
+  'Top 3 enemy heroes you fought the most (by battles).'
 );
 
 const survivorHtml = statCard(
   'Survivor',
   survivor?.hero ?? '–',
-  'Menor taxa de morte (mortes/batalhas); desempate: mais batalhas → maior W/R → A–Z.'
+  'Lowest death rate (deaths/battles); tie-breakers: more battles → higher W/R → A–Z.'
 );
 
-// você renomeou o card:
 const glassHtml = statCard(
   'Most Deaths',
   glass?.hero ?? '–',
-  'Maior taxa de morte (mortes/batalhas); desempate: mais batalhas → menor W/R → A–Z.'
+  'Highest death rate (deaths/battles); tie-breakers: more battles → lower W/R → A–Z.'
 );
 
 const bestMuHtml = statCard(
   'Best Matchup',
   bestMu ? `${bestMu.team} (${pct(bestMu.wr)})` : '–',
-  'Trio de inimigos com maior W/R (mín. 1 batalha); desempate: mais batalhas → A–Z.'
+  'Enemy trio with the highest W/R (min. 1 battle); tie-breakers: more battles → A–Z.'
 );
 
 const worstMuHtml = statCard(
   'Worst Matchup',
   worstMu ? `${worstMu.team} (${pct(worstMu.wr)})` : '–',
-  'Trio com menor W/R (precisa ter derrota); desempate: mais batalhas → A–Z.'
+  'Enemy trio with the lowest W/R (requires at least 1 loss); tie-breakers: more battles → A–Z.'
 );
 
-$ps.innerHTML = mvpHtml + lvpHtml + nemHtml + favHtml + survivorHtml + glassHtml + bestMuHtml + worstMuHtml;
+$ps.innerHTML =
+  mvpHtml + lvpHtml + nemHtml + favHtml +
+  survivorHtml + glassHtml + bestMuHtml + worstMuHtml;
 }
 
 async function loadProfileStats(player) {

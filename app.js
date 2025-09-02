@@ -351,6 +351,19 @@ const mvpHtml = mvp
   `;
 }
 
+// Gera um mini-card com overlay de regras no hover
+function statCard(label, value, hintText) {
+  const safeLabel = escHTML(label);
+  const safeValue = escHTML(value ?? '–');
+  const safeHint  = escHTML(hintText || '');
+  return `
+    <div class="stat" tabindex="0" role="note" aria-label="${escAttr(`${label}: ${value ?? '–'}. ${hintText || ''}`)}">
+      <div class="k">${safeLabel}</div>
+      <div class="v">${safeValue}</div>
+      <div class="hint">${safeHint || ''}</div>
+    </div>`;
+}
+
 // === Player Insights (mini-cards) ===
 function renderPersonalStats(stats) {
   const $ps = document.querySelector('#personalStats');
@@ -466,56 +479,56 @@ const worstMu = worstPool.length
 
   const pct = x => (x == null ? '–' : (x*100).toFixed(1) + '%');
 
-  // Monta os mini-cards
-  const mvpHtml = `
-    <div class="stat">
-      <div class="k">MVP</div>
-      <div class="v">${mvp?.hero ?? '–'}</div>
-    </div>`;
+const mvpHtml = statCard(
+  'MVP',
+  mvp?.hero ?? '–',
+  'Maior W/R; desempate: mais batalhas → menos mortes → A–Z.'
+);
 
-  const lvpHtml = `
-    <div class="stat">
-      <div class="k">LVP</div>
-      <div class="v">${lvp?.hero ?? '–'}</div>
-    </div>`;
+const lvpHtml = statCard(
+  'LVP',
+  lvp?.hero ?? '–',
+  'Menor W/R (precisa ≥1 derrota); desempate: mais batalhas → mais mortes → A–Z.'
+);
 
-  const nemHtml = `
-    <div class="stat">
-      <div class="k">Nemesis</div>
-      <div class="v">${nemesis?.enemyHero ?? '–'}</div>
-    </div>`;
+const nemHtml = statCard(
+  'Nemesis',
+  nemesis?.enemyHero ?? '–',
+  'Inimigo que mais te venceu; desempate: mais batalhas → A–Z.'
+);
 
-  const favHtml = `
-    <div class="stat">
-      <div class="k">Fav. Targets</div>
-      <div class="v">${favTargets.length ? favTargets.join(', ') : '–'}</div>
-    </div>`;
+const favHtml = statCard(
+  'Fav. Targets',
+  (favTargets.length ? favTargets.join(', ') : '–'),
+  'Top 3 inimigos mais atacados (por batalhas).'
+);
 
-  const survivorHtml = `
-    <div class="stat">
-      <div class="k">Survivor</div>
-      <div class="v">${survivor?.hero ?? '–'}</div>
-    </div>`;
+const survivorHtml = statCard(
+  'Survivor',
+  survivor?.hero ?? '–',
+  'Menor taxa de morte (mortes/batalhas); desempate: mais batalhas → maior W/R → A–Z.'
+);
 
-  const glassHtml = `
-    <div class="stat">
-      <div class="k">Most Deaths</div>
-      <div class="v">${glass?.hero ?? '–'}</div>
-    </div>`;
+// você renomeou o card:
+const glassHtml = statCard(
+  'Most Deaths',
+  glass?.hero ?? '–',
+  'Maior taxa de morte (mortes/batalhas); desempate: mais batalhas → menor W/R → A–Z.'
+);
 
-const bestMuHtml = `
-  <div class="stat">
-    <div class="k">Best Matchup</div>
-    <div class="v">${bestMu ? `${escHTML(bestMu.team)} (${pct(bestMu.wr)})` : '–'}</div>
-  </div>`;
+const bestMuHtml = statCard(
+  'Best Matchup',
+  bestMu ? `${bestMu.team} (${pct(bestMu.wr)})` : '–',
+  'Trio de inimigos com maior W/R (mín. 1 batalha); desempate: mais batalhas → A–Z.'
+);
 
-const worstMuHtml = `
-  <div class="stat">
-    <div class="k">Worst Matchup</div>
-    <div class="v">${worstMu ? `${escHTML(worstMu.team)} (${pct(worstMu.wr)})` : '–'}</div>
-  </div>`;
+const worstMuHtml = statCard(
+  'Worst Matchup',
+  worstMu ? `${worstMu.team} (${pct(worstMu.wr)})` : '–',
+  'Trio com menor W/R (precisa ter derrota); desempate: mais batalhas → A–Z.'
+);
 
-  $ps.innerHTML = mvpHtml + lvpHtml + nemHtml + favHtml + survivorHtml + glassHtml + bestMuHtml + worstMuHtml;
+$ps.innerHTML = mvpHtml + lvpHtml + nemHtml + favHtml + survivorHtml + glassHtml + bestMuHtml + worstMuHtml;
 }
 
 async function loadProfileStats(player) {
